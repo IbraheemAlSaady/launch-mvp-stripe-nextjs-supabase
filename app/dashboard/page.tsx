@@ -201,7 +201,6 @@ export default function Dashboard() {
           Dashboard
         </h1>
         <p className="text-slate-600 dark:text-slate-400">
-          Current Role: USER — 
           {subscription?.product_name ? (
             <>
               {subscription.product_name}
@@ -275,7 +274,7 @@ export default function Dashboard() {
                 No content created
               </h4>
               <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-                You don't have any content yet. Start creating content.
+                You don&apos;t have any content yet. Start creating content.
               </p>
               <button className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors border border-slate-200 dark:border-slate-600">
                 Add Content

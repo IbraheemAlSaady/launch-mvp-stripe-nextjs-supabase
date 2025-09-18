@@ -7,14 +7,13 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    
     // Check for saved theme preference or default to system preference
     const savedTheme = localStorage.getItem('theme');
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     const shouldBeDark = savedTheme === 'dark' || (!savedTheme && systemDark);
     setIsDark(shouldBeDark);
+    setMounted(true);
     
     // Apply theme to document
     if (shouldBeDark) {

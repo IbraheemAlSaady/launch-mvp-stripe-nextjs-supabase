@@ -18,21 +18,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark')
-                } else {
-                  document.documentElement.classList.remove('dark')
-                }
-              } catch (_) {}
-            `,
-          }}
-        />
       </head>
       <body className={geist.className}>
         <Analytics mode="auto" />
@@ -54,8 +41,9 @@ export default function RootLayout({
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Don't show TopBar on dashboard route as it has its own header
-  const showTopBar = !pathname?.startsWith('/dashboard');
+  // Don't show TopBar on dashboard-related routes as they have their own layout
+  const dashboardRoutes = ['/dashboard', '/charts', '/billing', '/posts', '/settings'];
+  const showTopBar = !dashboardRoutes.some(route => pathname?.startsWith(route));
   
   return (
     <>

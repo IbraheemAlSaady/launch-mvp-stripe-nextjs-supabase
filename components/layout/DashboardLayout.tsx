@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/hooks/useTheme';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   Moon, 
   Sun, 
@@ -30,19 +30,19 @@ const menuItems = [
   {
     category: "MENU",
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", active: true },
-      { icon: CreditCard, label: "Billing", href: "/billing", active: false },
-      { icon: BarChart3, label: "Charts", href: "/charts", active: false },
-      { icon: Users, label: "User Posts", href: "/posts", active: false },
+      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+      { icon: CreditCard, label: "Billing", href: "/billing" },
+      { icon: BarChart3, label: "Charts", href: "/charts" },
+      { icon: Users, label: "User Posts", href: "/posts" },
     ]
   },
   {
     category: "OPTIONS", 
     items: [
-      { icon: SettingsIcon, label: "Settings", href: "/settings", active: false },
-      { icon: Home, label: "Homepage", href: "/", active: false },
-      { icon: BookOpen, label: "Documentation", href: "/docs", active: false },
-      { icon: HelpCircle, label: "Support", href: "/support", active: false },
+      { icon: SettingsIcon, label: "Settings", href: "/settings" },
+      { icon: Home, label: "Homepage", href: "/" },
+      { icon: BookOpen, label: "Documentation", href: "/docs" },
+      { icon: HelpCircle, label: "Support", href: "/support" },
     ]
   }
 ];
@@ -52,6 +52,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { subscription } = useSubscription();
   const { isDark, toggleTheme, mounted } = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -233,27 +234,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </h3>
                 )}
                 <ul className="space-y-1">
-                  {category.items.map((item) => (
-                    <li key={item.label}>
-                      <a
-                        href={item.href}
-                        className={`flex items-center rounded-lg text-sm transition-colors ${
-                          sidebarCollapsed 
-                            ? 'justify-center px-2 py-3' 
-                            : 'px-3 py-2'
-                        } ${
-                          item.active
-                            ? 'bg-gray-200 dark:bg-slate-700 text-gray-900 dark:text-white'
-                            : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <item.icon className={`h-4 w-4 flex-shrink-0 ${sidebarCollapsed ? '' : ''}`} />
-                        {!sidebarCollapsed && (
-                          <span className="ml-3">{item.label}</span>
-                        )}
-                      </a>
-                    </li>
-                  ))}
+                  {category.items.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <li key={item.label}>
+                        <a
+                          href={item.href}
+                          className={`flex items-center rounded-lg text-sm transition-colors ${
+                            sidebarCollapsed 
+                              ? 'justify-center px-2 py-3' 
+                              : 'px-3 py-2'
+                          } ${
+                            isActive
+                              ? 'bg-gray-200 dark:bg-slate-700 text-gray-900 dark:text-white'
+                              : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          <item.icon className={`h-4 w-4 flex-shrink-0 ${sidebarCollapsed ? '' : ''}`} />
+                          {!sidebarCollapsed && (
+                            <span className="ml-3">{item.label}</span>
+                          )}
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
@@ -263,7 +267,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {!isPro && (
             <div className={`mt-auto ${sidebarCollapsed ? 'px-2 py-4 flex justify-center' : 'p-4'} bg-gray-100 dark:bg-slate-800 rounded-lg`}>
               {sidebarCollapsed ? (
-                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-white text-xs font-bold">↑</span>
                 </div>
               ) : (
@@ -272,7 +276,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <p className="text-gray-600 dark:text-slate-400 text-sm mb-4">
                     Unlock all features and get unlimited access to our support team.
                   </p>
-                  <button className="w-full bg-blue-500 dark:bg-white text-white dark:text-slate-900 py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-600 dark:hover:bg-slate-100 transition-colors">
+                  <button className="w-full bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
                     Upgrade
                   </button>
                 </>

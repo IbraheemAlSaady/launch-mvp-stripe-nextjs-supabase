@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { AccountManagement } from '@/components/AccountManagement';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Suspense } from 'react';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import { ProfileSkeleton } from '@/components/ProfileSkeleton';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { UpgradePlans } from '@/components/UpgradePlans';

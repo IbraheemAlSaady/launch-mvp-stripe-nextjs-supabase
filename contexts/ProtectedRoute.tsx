@@ -6,6 +6,7 @@ import {usePathname } from 'next/navigation';
 import { DashboardSkeleton } from '@/components/DashboardSkeleton';
 import { ProfileSkeleton } from '@/components/ProfileSkeleton';
 import { PageSkeleton } from '@/components/PageSkeleton';
+import { ChartsSkeleton } from '@/components/ChartsSkeleton';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 // import { useRouter, usePathname } from 'next/navigation';
 
@@ -33,13 +34,17 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   // Show loading state only if actually loading
   if (isLoading) {
-    // Show dashboard skeleton for dashboard route, regular loading for others
+    // Show appropriate skeleton for each route
     if (pathname === '/dashboard') {
       return (
         <DashboardLayout>
           <DashboardSkeleton />
         </DashboardLayout>
       );
+    }
+    
+    if (pathname === '/charts') {
+      return <ChartsSkeleton />;
     }
     
     // For other protected routes, show appropriate skeleton loading
