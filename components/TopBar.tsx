@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
+import { LayoutDashboard, Settings, LogOut, Moon, Sun } from 'lucide-react';
 // import { supabase } from '@/utils/supabase';
 
 // TopBar component handles user profile display and navigation
@@ -20,6 +21,44 @@ export default function TopBar() {
 
   // State for tracking logout process
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Theme management state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Initialize theme on component mount
+  useEffect(() => {
+    const checkTheme = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setIsDarkMode(isDark);
+    };
+    
+    checkTheme();
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    const html = document.documentElement;
+    const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
+    
+    if (newTheme === 'dark') {
+      html.classList.add('dark');
+      localStorage.theme = 'dark';
+    } else {
+      html.classList.remove('dark');
+      localStorage.theme = 'light';
+    }
+    
+    setIsDarkMode(newTheme === 'dark');
+  };
 
   // Handle click outside dropdown to close it
   useEffect(() => {
@@ -93,36 +132,85 @@ export default function TopBar() {
                   {isInTrial ? "Start Free Trial" : "Start Building"}
                 </button>
               )}
+
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-full hover:bg-neutral-darker/10 dark:hover:bg-neutral-darker/50 transition-colors"
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
               
               <div className="relative" ref={dropdownRef}>
+                {/* Avatar button */}
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 hover:bg-neutral-darker/10 dark:hover:bg-neutral-darker/50 px-3 py-2 rounded-full transition-colors"
+                  className="flex items-center gap-2 hover:bg-neutral-darker/10 dark:hover:bg-neutral-darker/50 px-1 py-1 rounded-full transition-colors"
                 >
-                  <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center text-primary dark:text-primary-light">
+                  <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center text-primary dark:text-primary-light font-semibold text-sm">
                     {user.email?.[0].toUpperCase()}
                   </div>
                 </button>
                 
+                {/* Enhanced Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-surface-light dark:bg-surface-dark rounded-lg shadow-hover py-1 z-[60] border border-gray-200 dark:border-gray-700">
-                    <Link
-                      href="/profile"
-                      className="block px-4 py-2 text-sm text-text dark:text-text-dark hover:bg-neutral dark:hover:bg-neutral-dark"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setIsDropdownOpen(false);
-                        window.location.href = '/profile';
-                      }}
-                    >
-                      Profile & Subscription
-                    </Link>
+                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-xl py-2 z-[60] border border-gray-200 dark:border-gray-700">
+                    {/* User Info Section */}
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {user.email}
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      {/* Dashboard */}
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          router.push('/dashboard');
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Dashboard
+                      </button>
+
+                      {/* Settings */}
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          router.push('/profile');
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </button>
+                    </div>
+
+                    {/* Separator */}
+                    <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+
+                    {/* Log out */}
                     <button
-                      onClick={handleLogout}
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        handleLogout();
+                      }}
                       disabled={isLoggingOut}
-                      className="block w-full text-left px-4 py-2 text-sm text-danger hover:bg-neutral dark:hover:bg-neutral-dark disabled:opacity-50"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                     >
-                      {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
+                      <LogOut className="w-4 h-4" />
+                      {isLoggingOut ? 'Signing Out...' : 'Log out'}
                     </button>
                   </div>
                 )}

@@ -9,6 +9,7 @@ import { AccountManagement } from '@/components/AccountManagement';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Suspense } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { ProfileSkeleton } from '@/components/ProfileSkeleton';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { UpgradePlans } from '@/components/UpgradePlans';
 // import { PricingSection } from '@/components/PricingSection';
@@ -221,14 +222,7 @@ function ProfileContent() {
   };
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mb-4 mx-auto"></div>
-          <p className="text-foreground">Redirecting to login...</p>
-        </div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   return (
@@ -239,7 +233,7 @@ function ProfileContent() {
         </div>
       }
     >
-      <div className="min-h-screen bg-surface-light dark:bg-surface-dark p-8 max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 max-w-4xl mx-auto">
         {paymentStatus === 'success' && (
           <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
             <p className="text-green-600 dark:text-green-400">
@@ -264,17 +258,27 @@ function ProfileContent() {
           </div>
         )}
         
-        <h1 className="text-3xl font-bold mb-8">Profile</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Profile</h1>
         
         <AccountManagement />
 
         {/* Subscription Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Subscription Status</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mt-8 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Subscription Status</h2>
           {isLoadingSubscription ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span>Loading subscription details...</span>
+            <div className="space-y-3 animate-pulse">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
+              <div className="flex gap-4 mt-4">
+                <div className="h-10 w-28 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                <div className="h-10 w-36 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              </div>
             </div>
           ) : subscription ? (
             <div className="space-y-2">
@@ -440,7 +444,7 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<ProfileSkeleton />}>
       <ProfileContent />
     </Suspense>
   );

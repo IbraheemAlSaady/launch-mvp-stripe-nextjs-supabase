@@ -3,6 +3,10 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {usePathname } from 'next/navigation';
+import { DashboardSkeleton } from '@/components/DashboardSkeleton';
+import { ProfileSkeleton } from '@/components/ProfileSkeleton';
+import { PageSkeleton } from '@/components/PageSkeleton';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 // import { useRouter, usePathname } from 'next/navigation';
 
 // List of public routes that don't require authentication
@@ -29,12 +33,28 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   // Show loading state only if actually loading
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col space-y-4 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        <div>Loading at lightspeed ⚡️</div>
-      </div>
-    );
+    // Show dashboard skeleton for dashboard route, regular loading for others
+    if (pathname === '/dashboard') {
+      return (
+        <DashboardLayout>
+          <DashboardSkeleton />
+        </DashboardLayout>
+      );
+    }
+    
+    // For other protected routes, show appropriate skeleton loading
+    if (!PUBLIC_ROUTES.includes(pathname)) {
+      // Show profile skeleton for profile pages
+      if (pathname?.startsWith('/profile')) {
+        return <ProfileSkeleton />;
+      }
+      
+      // For other routes, show page skeleton
+      return <PageSkeleton showHeader={true} />;
+    }
+    
+    // For public routes, show minimal loading
+    return <PageSkeleton showHeader={false} />;
   }
 
   // Only render children if we're on a public route or user is authenticated

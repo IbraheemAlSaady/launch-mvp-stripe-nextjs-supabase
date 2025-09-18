@@ -31,6 +31,9 @@
     "react-scroll": "^1.9.2",
     "stripe": "^17.5.0"
   },
+  "overrides": {
+    "jsondiffpatch": "^0.7.2"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@supabase/mcp-server-supabase": "^0.3.4",
