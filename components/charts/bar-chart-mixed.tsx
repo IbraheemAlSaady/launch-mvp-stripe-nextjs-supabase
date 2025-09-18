@@ -1,7 +1,7 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, Tooltip } from "recharts";
 
 import {
   Card,
@@ -12,7 +12,6 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
@@ -78,11 +77,17 @@ export function BarChartMixed() {
               }
             />
             <XAxis dataKey="visitors" type="number" hide />
-            <ChartTooltip
+            <Tooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={(props) => (
+                <ChartTooltipContent 
+                  active={props.active}
+                  payload={props.payload}
+                  label={props.label?.toString()}
+                />
+              )}
             />
-            <Bar dataKey="visitors" layout="vertical" radius={5} />
+            <Bar dataKey="visitors" radius={5} />
           </BarChart>
         </ChartContainer>
       </CardContent>

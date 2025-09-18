@@ -1,7 +1,7 @@
 "use client"
 
 import { TrendingUp } from "lucide-react"
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, XAxis, Tooltip } from "recharts"
 
 import {
   Card,
@@ -14,7 +14,6 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 const chartData = [
@@ -62,7 +61,16 @@ export function LineChartMultiple() {
               tickMargin={8}
               tickFormatter={(value) => value.slice(0, 3)}
             />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+            <Tooltip 
+              cursor={false} 
+              content={(props) => (
+                <ChartTooltipContent 
+                  active={props.active}
+                  payload={props.payload}
+                  label={props.label?.toString()}
+                />
+              )} 
+            />
             <Line
               dataKey="desktop"
               type="monotone"

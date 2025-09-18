@@ -1,7 +1,7 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
+import { Label, PolarRadiusAxis, RadialBar, RadialBarChart, Tooltip } from "recharts";
 
 import {
   Card,
@@ -11,7 +11,6 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
@@ -48,9 +47,15 @@ export function RadialStackedChart() {
             innerRadius={80}
             outerRadius={130}
           >
-            <ChartTooltip
+            <Tooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={(props) => (
+                <ChartTooltipContent 
+                  active={props.active}
+                  payload={props.payload}
+                  label={props.label?.toString()}
+                />
+              )}
             />
             <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
               <Label

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts";
 
 import {
   Card,
@@ -13,7 +13,6 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
@@ -195,20 +194,19 @@ export function InteractiveBarChart() {
                 });
               }}
             />
-            <ChartTooltip
-              content={
+            <Tooltip
+              content={(props) => (
                 <ChartTooltipContent
+                  active={props.active}
+                  payload={props.payload}
+                  label={props.label ? new Date(props.label).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  }) : undefined}
                   className="w-[150px]"
-                  nameKey="views"
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    });
-                  }}
                 />
-              }
+              )}
             />
             <Bar dataKey={activeChart} fill={`var(--color-${activeChart})`} />
           </BarChart>

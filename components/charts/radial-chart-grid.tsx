@@ -1,7 +1,7 @@
 "use client"
 
 import { TrendingUp } from "lucide-react"
-import { PolarGrid, RadialBar, RadialBarChart } from "recharts"
+import { PolarGrid, RadialBar, RadialBarChart, Tooltip } from "recharts"
 
 import {
   Card,
@@ -11,7 +11,6 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 const chartData = [
@@ -61,9 +60,15 @@ export function RadialChartGrid() {
           className="mx-auto aspect-square max-h-[250px]"
         >
           <RadialBarChart data={chartData} innerRadius={30} outerRadius={100}>
-            <ChartTooltip
+            <Tooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel nameKey="browser" />}
+              content={(props) => (
+                <ChartTooltipContent 
+                  active={props.active}
+                  payload={props.payload}
+                  label={props.label?.toString()}
+                />
+              )}
             />
             <PolarGrid gridType="circle" />
             <RadialBar dataKey="visitors" />
