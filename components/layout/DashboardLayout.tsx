@@ -95,21 +95,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B1120]">
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar - Full Width */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-[#1a1f2e] border-b border-slate-200 dark:border-slate-700 z-50">
         <div className="flex items-center justify-between h-full px-4">
-          {/* Left side - Mobile menu only */}
-          <div className="flex items-center">
+          {/* Left side - Project dropdown and mobile menu */}
+          <div className="flex items-center gap-4">
+            {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
             >
               <Menu className="h-5 w-5" />
             </button>
+            
+            {/* Project dropdown */}
+            <div className="hidden lg:flex items-center gap-3 px-3 py-2 bg-gray-100 dark:bg-slate-800 rounded-lg">
+              <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
+                <div className="w-3 h-3 bg-white rounded-full"></div>
+              </div>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">project-number...</span>
+              <ChevronRight className="h-4 w-4 text-gray-500 dark:text-slate-400" />
+            </div>
           </div>
 
+
           {/* Right side - Theme toggle and user */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <button
               onClick={toggleTheme}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"

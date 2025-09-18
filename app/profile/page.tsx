@@ -50,26 +50,23 @@ function ProfileContent() {
   // Add loading timeout with auto-refresh
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    let refreshAttempts = 0;
-    const MAX_REFRESH_ATTEMPTS = 3;
-    const REFRESH_INTERVAL = 3000; // 3 seconds
     
-    const attemptRefresh = async () => {
-      if (refreshAttempts < MAX_REFRESH_ATTEMPTS) {
-        refreshAttempts++;
-        await fetchSubscription();
+    const handleLoadingTimeout = () => {
+      if (isLoadingSubscription) {
+        console.warn('Subscription loading timeout, forcing refresh');
+        fetchSubscription(true); // Force fresh fetch
         
-        // If still loading, schedule next attempt
-        if (isLoadingSubscription) {
-          timeoutId = setTimeout(attemptRefresh, REFRESH_INTERVAL);
-        }
-      } else {
-        setError('Loading subscription is taking longer than expected. Please refresh the page.');
+        // Set a hard timeout to prevent infinite loading
+        setTimeout(() => {
+          if (isLoadingSubscription) {
+            setError('Loading subscription is taking longer than expected. Please refresh the page.');
+          }
+        }, 10000); // 10 second hard timeout
       }
     };
 
     if (isLoadingSubscription) {
-      timeoutId = setTimeout(attemptRefresh, REFRESH_INTERVAL);
+      timeoutId = setTimeout(handleLoadingTimeout, 5000); // 5 second timeout
     }
 
     return () => {

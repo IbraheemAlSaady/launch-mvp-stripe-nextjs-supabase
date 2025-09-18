@@ -17,20 +17,27 @@ export interface Subscription {
   updated_at: string;
 }
 
+// Move cache outside component to persist across renders
+const subscriptionCache = new Map<string, {data: Subscription | null, timestamp: number}>();
+const CACHE_DURATION = 30000; // 30 seconds
+
 export function useSubscription() {
   const { user, supabase } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const subscriptionCache = new Map<string, {data: Subscription | null, timestamp: number}>();
-  const CACHE_DURATION = 30000; // 30 seconds
-
   const fetchSubscription = useCallback(async (forceFresh = false) => {
     if (!user?.id) {
       setSubscription(null);
       setLoading(false);
+      setError(null);
       return;
+    }
+
+    // Only set loading to true if we're not using cache
+    if (forceFresh) {
+      setLoading(true);
     }
 
     const now = Date.now();
@@ -42,9 +49,14 @@ export function useSubscription() {
       if (cached && (now - cached.timestamp < CACHE_DURATION)) {
         setSubscription(cached.data);
         setLoading(false);
+        setError(null);
         return;
       }
     }
+
+    // Set loading only when actually fetching
+    setLoading(true);
+    setError(null);
 
     try {
       const { data, error } = await supabase
@@ -70,6 +82,7 @@ export function useSubscription() {
       });
       
       setSubscription(result);
+      setError(null);
     } catch (err) {
       console.error('Subscription fetch error:', err);
       setError('Failed to load subscription');
@@ -96,6 +109,7 @@ export function useSubscription() {
   const debouncedSyncWithStripe = useCallback(
     debounce(async (subscriptionId: string) => {
       if (syncRetries >= MAX_SYNC_RETRIES) {
+        console.warn('Max sync retries reached, skipping sync');
         return;
       }
 
@@ -111,14 +125,16 @@ export function useSubscription() {
           throw new Error(errorData.details || 'Failed to sync with Stripe');
         }
         
-        await fetchSubscription();
+        await fetchSubscription(true); // Force fresh fetch after sync
         setSyncRetries(0); // Reset retries on success
       } catch (error) {
         console.error('Error syncing with Stripe:', error);
-        setError(error instanceof Error ? error.message : 'Failed to sync with Stripe');
         setSyncRetries(prev => prev + 1);
+        
+        // Don't set error state for sync failures, just log them
+        // This prevents the UI from showing errors for background sync operations
       }
-    }, 30000), // 30 second delay between calls
+    }, 5000), // Reduce debounce time to 5 seconds for better responsiveness
     [fetchSubscription, syncRetries]
   );
 
