@@ -1,70 +1,17 @@
 // File: /components/PricingSection.tsx
 
-// import Link from 'next/link';
-// import { StripeBuyButton } from './StripeBuyButton';
 import { motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-// interface PricingSectionProps {
-//   showFullDetails?: boolean;
-// }
-
-const pricingTiers = [
-  {
-    id: "pro",
-    name: "Pro",
-    price: "$19",
-    interval: "/month",
-    description: "Perfect for small teams and startups",
-    features: [
-      "All template features",
-      "Priority support",
-      "Custom branding",
-      "Analytics dashboard",
-      "Team collaboration"
-    ],
-    cta: "Get Started",
-    popular: false
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "$49",
-    interval: "/month",
-    description: "For larger organizations",
-    features: [
-      "Everything in Pro",
-      "Advanced security",
-      "Custom integrations",
-      "24/7 support",
-      "SLA guarantee"
-    ],
-    cta: "Start Trial",
-    popular: true
-  },
-  {
-    id: "custom",
-    name: "Custom",
-    price: "Custom",
-    interval: "",
-    description: "Tailored to your needs",
-    features: [
-      "Custom development",
-      "Dedicated support",
-      "Custom SLA",
-      "On-premise options",
-      "Training sessions"
-    ],
-    cta: "Contact Sales",
-    popular: false
-  }
-];
+import { getMarketingPricingTiers } from '@/config/pricing';
 
 export function PricingSection() {
   const router = useRouter();
   const [selectedTier, setSelectedTier] = useState<string | null>("enterprise");
+  
+  // Get pricing tiers from centralized configuration
+  const pricingTiers = getMarketingPricingTiers();
 
   const handleTierClick = (tierId: string) => {
     setSelectedTier(currentTier => currentTier === tierId ? null : tierId);

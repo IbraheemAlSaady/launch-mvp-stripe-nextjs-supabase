@@ -13,6 +13,7 @@ import {
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { CHART_CONFIGS } from "./chart-theme";
 
 const chartData = [
   { month: "January", desktop: 186 },
@@ -24,10 +25,7 @@ const chartData = [
 ];
 
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
-  },
+  desktop: CHART_CONFIGS.desktop,
 } satisfies ChartConfig;
 
 export function RadarChartSimple() {
@@ -59,7 +57,7 @@ export function RadarChartSimple() {
             <PolarGrid />
             <Radar
               dataKey="desktop"
-              fill="var(--color-desktop)"
+              fill={chartConfig.desktop.color}
               fillOpacity={0.6}
             />
           </RadarChart>

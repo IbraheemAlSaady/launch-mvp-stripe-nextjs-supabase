@@ -3,92 +3,21 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
+import { getOnboardingPricingTiers, type PricingTier } from '@/config/pricing';
 
 interface OnboardingPricingProps {
   userId: string;
   userEmail: string;
 }
 
-interface PricingTier {
-  id: string;
-  name: string;
-  price: string;
-  interval?: string;
-  description: string;
-  features: string[];
-  popular: boolean;
-  stripePaymentLink: string | null;
-  cta: string;
-}
-
 export function OnboardingPricing({ userId, userEmail }: OnboardingPricingProps) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
-  // Pricing tiers with Stripe Payment Links
-  const pricingTiers: PricingTier[] = [
-    {
-      id: 'pro',
-      name: 'Pro',
-      price: '$19',
-      interval: '/month',
-      description: 'Perfect for small teams and startups',
-      features: [
-        'All template features',
-        'Priority support',
-        'Custom branding',
-        'Analytics dashboard',
-        'Team collaboration'
-      ],
-      popular: false,
-      stripePaymentLink: process.env.NEXT_PUBLIC_STRIPE_PRO_PAYMENT_LINK!,
-      cta: 'Get Started'
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: '$49',
-      interval: '/month',
-      description: 'For larger organizations',
-      features: [
-        'Everything in Pro',
-        'Advanced security',
-        'Custom integrations',
-        '24/7 support',
-        'SLA guarantee'
-      ],
-      popular: true,
-      stripePaymentLink: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PAYMENT_LINK!,
-      cta: 'Start Trial'
-    },
-    // {
-    //   id: 'custom',
-    //   name: 'Custom',
-    //   price: 'Custom',
-    //   interval: '',
-    //   description: 'Tailored to your needs',
-    //   features: [
-    //     'Custom development',
-    //     'Dedicated support',
-    //     'Custom SLA',
-    //     'On-premise options',
-    //     'Training sessions'
-    //   ],
-    //   popular: false,
-    //   stripePaymentLink: null,
-    //   cta: 'Contact Sales'
-    // }
-  ];
+  // Get pricing tiers from centralized configuration
+  const pricingTiers = getOnboardingPricingTiers();
 
-  const handlePlanSelect = async (tier: PricingTier) => {
-    if (!tier.stripePaymentLink) {
-      // Handle custom plan - redirect to contact form
-      router.push('/contact-sales');
-      return;
-    }
-
+  const handlePlanSelect = async (tier: PricingTier & { stripePaymentLink: string }) => {
     setIsLoading(tier.id);
     
     try {
@@ -145,7 +74,7 @@ export function OnboardingPricing({ userId, userEmail }: OnboardingPricingProps)
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`relative rounded-lg p-6 border-2 transition-all duration-300 ${
+            className={`relative rounded-lg p-6 border-2 transition-all duration-300 flex flex-col h-full ${
               tier.popular 
                 ? 'border-primary bg-primary/5 dark:bg-primary/10 scale-105' 
                 : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'
@@ -175,7 +104,7 @@ export function OnboardingPricing({ userId, userEmail }: OnboardingPricingProps)
               )}
             </div>
             
-            <ul className="mt-6 space-y-3">
+            <ul className="mt-6 space-y-3 flex-grow">
               {tier.features.map((feature, idx) => (
                 <li key={idx} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <CheckCircle2 className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />

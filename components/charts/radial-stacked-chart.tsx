@@ -1,7 +1,7 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import { Label, PolarRadiusAxis, RadialBar, RadialBarChart, Tooltip } from "recharts";
+import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 
 import {
   Card,
@@ -11,7 +11,6 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 
 const chartData = [{ month: "january", desktop: 1260, mobile: 570 }];
@@ -19,11 +18,11 @@ const chartData = [{ month: "january", desktop: 1260, mobile: 570 }];
 const chartConfig = {
   desktop: {
     label: "Desktop",
-    color: "hsl(var(--chart-1))",
+    color: "#8B5CF6", // Purple to match your theme
   },
   mobile: {
     label: "Mobile",
-    color: "hsl(var(--chart-2))",
+    color: "#06B6D4", // Cyan to match your theme
   },
 } satisfies ChartConfig;
 
@@ -32,31 +31,18 @@ export function RadialStackedChart() {
 
   return (
     <Card className="flex flex-col">
-      {/* <CardHeader className="items-center pb-0">
-        <CardTitle>Radial Chart - Stacked</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
-      </CardHeader> */}
       <CardContent className="flex flex-1 items-center pb-0">
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square w-full max-w-[250px]"
+          className="mx-auto w-full max-w-[250px] h-[200px]"
         >
           <RadialBarChart
             data={chartData}
-            endAngle={180}
+            startAngle={180}
+            endAngle={0}
             innerRadius={80}
-            outerRadius={130}
+            outerRadius={110}
           >
-            <Tooltip
-              cursor={false}
-              content={(props) => (
-                <ChartTooltipContent 
-                  active={props.active}
-                  payload={props.payload}
-                  label={props.label?.toString()}
-                />
-              )}
-            />
             <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
               <Label
                 content={({ viewBox }) => {
@@ -66,14 +52,14 @@ export function RadialStackedChart() {
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) - 16}
-                          className="fill-foreground text-2xl font-bold"
+                          className="fill-slate-900 dark:fill-white text-2xl font-bold"
                         >
                           {totalVisitors.toLocaleString()}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 4}
-                          className="fill-muted-foreground"
+                          className="fill-slate-600 dark:fill-slate-400"
                         >
                           Visitors
                         </tspan>
@@ -87,12 +73,12 @@ export function RadialStackedChart() {
               dataKey="desktop"
               stackId="a"
               cornerRadius={5}
-              fill="var(--color-desktop)"
+              fill="#8B5CF6"
               className="stroke-transparent stroke-2"
             />
             <RadialBar
               dataKey="mobile"
-              fill="var(--color-mobile)"
+              fill="#06B6D4"
               stackId="a"
               cornerRadius={5}
               className="stroke-transparent stroke-2"
@@ -104,7 +90,7 @@ export function RadialStackedChart() {
         <div className="flex items-center gap-2 font-medium leading-none">
           Trending up by 5.2% this month <TrendingUp className="size-4" />
         </div>
-        <div className="leading-none text-muted-foreground">
+        <div className="leading-none text-slate-600 dark:fill-slate-400">
           Showing total visitors for the last 6 months
         </div>
       </CardFooter>

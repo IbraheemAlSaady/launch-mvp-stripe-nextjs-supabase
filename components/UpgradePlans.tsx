@@ -3,18 +3,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, ArrowUp, Loader2 } from 'lucide-react';
+import { getUpgradePricingTiers, type PricingTier } from '@/config/pricing';
 
-interface Plan {
-  id: string;
-  name: string;
-  priceId: string; // Stripe Price ID
-  price: string;
-  interval: string;
-  description: string;
-  features: string[];
-  popular?: boolean;
-  current?: boolean;
-}
+type Plan = PricingTier & { priceId: string; current: boolean };
 
 interface UpgradePlansProps {
   currentPlan: string;
@@ -26,42 +17,8 @@ export function UpgradePlans({ currentPlan, onUpgrade, isUpgrading }: UpgradePla
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [confirmationPlan, setConfirmationPlan] = useState<Plan | null>(null);
 
-  // Define your available plans with their Stripe Price IDs
-  const plans: Plan[] = [
-    {
-      id: 'pro',
-      name: 'Pro',
-      priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!, // Your Stripe Price ID
-      price: '$19',
-      interval: '/month',
-      description: 'Perfect for small teams and startups',
-      features: [
-        'All template features',
-        'Priority support',
-        'Custom branding',
-        'Analytics dashboard',
-        'Team collaboration'
-      ],
-      current: currentPlan === 'pro'
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      priceId: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID!, // Your Stripe Price ID
-      price: '$49',
-      interval: '/month',
-      description: 'For larger organizations',
-      features: [
-        'Everything in Pro',
-        'Advanced security',
-        'Custom integrations',
-        '24/7 support',
-        'SLA guarantee'
-      ],
-      popular: true,
-      current: currentPlan === 'enterprise'
-    }
-  ];
+  // Get plans from centralized configuration
+  const plans = getUpgradePricingTiers(currentPlan);
 
   const handlePlanClick = (plan: Plan) => {
     if (plan.current || isUpgrading) return;

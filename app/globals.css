@@ -5,11 +5,31 @@
 :root {
   --background: #F8F9FA;
   --foreground: #2F3E46;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --border: #E2E8F0;
+  
+  /* Chart CSS Variables */
+  --chart-1: 262 83% 58%;
+  --chart-2: 188 95% 43%;
+  --chart-3: 158 64% 52%;
+  --chart-4: 43 96% 56%;
+  --chart-5: 0 84% 60%;
 }
 
 .dark {
   --background: #1A1B26;
   --foreground: #F8F9FA;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --border: #334155;
+  
+  /* Chart CSS Variables for Dark Mode */
+  --chart-1: 262 83% 58%;
+  --chart-2: 188 95% 43%;
+  --chart-3: 158 64% 52%;
+  --chart-4: 43 96% 56%;
+  --chart-5: 0 84% 60%;
 }
 
 body {

@@ -15,6 +15,7 @@ import {
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { CHART_CONFIGS } from "./chart-theme";
 
 const chartData = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
@@ -114,14 +115,8 @@ const chartConfig = {
   views: {
     label: "Page Views",
   },
-  desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "hsl(var(--chart-2))",
-  },
+  desktop: CHART_CONFIGS.desktop,
+  mobile: CHART_CONFIGS.mobile,
 } satisfies ChartConfig;
 
 export function InteractiveBarChart() {
@@ -208,7 +203,11 @@ export function InteractiveBarChart() {
                 />
               )}
             />
-            <Bar dataKey={activeChart} fill={`var(--color-${activeChart})`} />
+            <Bar dataKey={activeChart} fill={
+              activeChart === 'desktop' ? chartConfig.desktop.color :
+              activeChart === 'mobile' ? chartConfig.mobile.color :
+              CHART_CONFIGS.desktop.color
+            } />
           </BarChart>
         </ChartContainer>
       </CardContent>

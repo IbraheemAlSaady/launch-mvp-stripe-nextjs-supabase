@@ -16,6 +16,8 @@ import {
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { CHART_CONFIGS } from "./chart-theme"
+
 const chartData = [
   { month: "January", desktop: 186, mobile: 80 },
   { month: "February", desktop: 305, mobile: 200 },
@@ -26,14 +28,8 @@ const chartData = [
 ]
 
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "hsl(var(--chart-2))",
-  },
+  desktop: CHART_CONFIGS.desktop,
+  mobile: CHART_CONFIGS.mobile,
 } satisfies ChartConfig
 
 export function LineChartMultiple() {
@@ -74,14 +70,14 @@ export function LineChartMultiple() {
             <Line
               dataKey="desktop"
               type="monotone"
-              stroke="var(--color-desktop)"
+              stroke={chartConfig.desktop.color}
               strokeWidth={2}
               dot={false}
             />
             <Line
               dataKey="mobile"
               type="monotone"
-              stroke="var(--color-mobile)"
+              stroke={chartConfig.mobile.color}
               strokeWidth={2}
               dot={false}
             />
