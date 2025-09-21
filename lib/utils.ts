@@ -43,7 +43,7 @@ export function constructMetadata({
     icons: {
       icon,
     },
-    metadataBase: new URL("http://localhost:3000"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
     ...(noIndex && {
       robots: {
         index: false,
