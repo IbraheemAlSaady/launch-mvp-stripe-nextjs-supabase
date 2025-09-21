@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 // import { OnboardingTour } from '@/components/OnboardingTour';
 import { useNavigation } from '@/hooks/useNavigation';
-import { MetricCardSkeleton, ActivityItemSkeleton } from '@/components/DashboardSkeleton';
+import { DashboardSkeleton } from '@/components/ui/skeleton';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import { 
@@ -151,23 +151,9 @@ export default function Dashboard() {
     if (isLoading) {
       // User has no subscription but we're still loading - redirect to onboarding
       if (user && !isSubscriber) {
-        return (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mb-4 mx-auto"></div>
-              <p className="text-foreground">Redirecting to setup...</p>
-            </div>
-          </div>
-        );
+        return <DashboardSkeleton />;
       }
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mb-4 mx-auto"></div>
-            <p className="text-foreground">Loading...</p>
-          </div>
-        </div>
-      );
+      return <DashboardSkeleton />;
     }
     return null; // Will redirect via useEffect
   }
@@ -223,7 +209,16 @@ export default function Dashboard() {
           {isMetricsLoading ? (
             // Show skeleton cards while loading
             [...Array(4)].map((_, index) => (
-              <MetricCardSkeleton key={`skeleton-${index}`} />
+              <div key={`skeleton-${index}`} className="bg-white dark:bg-neutral-dark rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                    <div className="w-6 h-6 bg-slate-200 dark:bg-slate-600 rounded animate-pulse"></div>
+                  </div>
+                  <div className="w-16 h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                </div>
+                <div className="w-20 h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-2"></div>
+                <div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              </div>
             ))
           ) : (
             // Show actual metrics when loaded
@@ -291,7 +286,15 @@ export default function Dashboard() {
               {isActivityLoading ? (
                 // Show skeleton items while loading
                 [...Array(4)].map((_, index) => (
-                  <ActivityItemSkeleton key={`activity-skeleton-${index}`} />
+                  <div key={`activity-skeleton-${index}`} className="flex items-center space-x-3 text-sm">
+                    <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                      <div className="w-4 h-4 bg-slate-200 dark:bg-slate-600 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="w-32 h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-1"></div>
+                      <div className="w-20 h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                    </div>
+                  </div>
                 ))
               ) : (
                 // Show actual activity when loaded

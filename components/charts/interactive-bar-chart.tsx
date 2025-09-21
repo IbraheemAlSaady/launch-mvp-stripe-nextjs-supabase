@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts";
 
 import {
@@ -122,6 +123,7 @@ const chartConfig = {
 export function InteractiveBarChart() {
   const [activeChart, setActiveChart] =
     React.useState<keyof typeof chartConfig>("desktop");
+  const [mounted, setMounted] = useState(false);
 
   const total = React.useMemo(
     () => ({
@@ -130,6 +132,10 @@ export function InteractiveBarChart() {
     }),
     [],
   );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <Card>
@@ -182,6 +188,7 @@ export function InteractiveBarChart() {
               tickMargin={8}
               minTickGap={32}
               tickFormatter={(value) => {
+                if (!mounted) return value;
                 const date = new Date(value);
                 return date.toLocaleDateString("en-US", {
                   month: "short",
@@ -194,11 +201,11 @@ export function InteractiveBarChart() {
                 <ChartTooltipContent
                   active={props.active}
                   payload={props.payload}
-                  label={props.label ? new Date(props.label).toLocaleDateString("en-US", {
+                  label={mounted && props.label ? new Date(props.label).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
-                  }) : undefined}
+                  }) : String(props.label || '')}
                   className="w-[150px]"
                 />
               )}

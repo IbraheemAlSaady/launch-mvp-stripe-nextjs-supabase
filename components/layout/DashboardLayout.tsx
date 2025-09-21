@@ -121,21 +121,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Right side - Theme toggle and user */}
           <div className="flex items-center space-x-3">
-            <button
-              onClick={toggleTheme}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              aria-label="Toggle theme"
-            >
-              {mounted ? (
-                isDark ? (
+            {mounted ? (
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                aria-label="Toggle theme"
+              >
+                {isDark ? (
                   <Sun className="h-5 w-5 text-slate-600 dark:text-slate-400 transition-colors" />
                 ) : (
                   <Moon className="h-5 w-5 text-slate-600 dark:text-slate-400 transition-colors" />
-                )
-              ) : (
-                <div className="h-5 w-5 bg-slate-200 dark:bg-slate-600 rounded animate-pulse"></div>
-              )}
-            </button>
+                )}
+              </button>
+            ) : (
+              // Render placeholder during SSR to avoid hydration mismatch
+              <div className="p-2 w-9 h-9" />
+            )}
             
             {/* Enhanced Avatar Dropdown */}
             <div className="relative" ref={dropdownRef}>

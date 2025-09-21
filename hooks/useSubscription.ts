@@ -22,7 +22,7 @@ const subscriptionCache = new Map<string, {data: Subscription | null, timestamp:
 const CACHE_DURATION = 30000; // 30 seconds
 
 export function useSubscription() {
-  const { user, supabase } = useAuth();
+  const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,21 +59,19 @@ export function useSubscription() {
     setError(null);
 
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('status', ['active', 'trialing'])
-        .order('created_at', { ascending: false })
-        .maybeSingle();
+      const response = await fetch(`/api/user/subscription?user_id=${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      const isValid = data && 
-        ['active', 'trialing'].includes(data.status) && 
-        new Date(data.current_period_end) > new Date();
-
-      const result = isValid ? data : null;
+      const responseData = await response.json();
+      const result = responseData.isValid ? responseData.subscription : null;
       
       // Update cache
       subscriptionCache.set(user.id, {
@@ -90,18 +88,13 @@ export function useSubscription() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, supabase]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchSubscription();
   }, [fetchSubscription]);
 
-  const checkValidSubscription = useCallback((data: Subscription[]): boolean => {
-    return data.some(sub => 
-      ['active', 'trialing'].includes(sub.status) &&
-      new Date(sub.current_period_end) > new Date()
-    );
-  }, []);
+  // Removed checkValidSubscription as it's no longer needed with API endpoint validation
 
   const MAX_SYNC_RETRIES = 3;
   const [syncRetries, setSyncRetries] = useState(0);
@@ -142,30 +135,8 @@ export function useSubscription() {
     debouncedSyncWithStripe(subscriptionId);
   }, [debouncedSyncWithStripe]);
 
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('subscription_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'subscriptions',
-          filter: `user_id=eq.${user.id}`
-        },
-        async (payload) => {
-          const isValid = checkValidSubscription([payload.new as Subscription]);
-          setSubscription(isValid ? payload.new as Subscription : null);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase, checkValidSubscription]);
+  // Removed real-time subscription updates to avoid direct Supabase usage
+  // Consider implementing polling or WebSocket if real-time updates are needed
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;

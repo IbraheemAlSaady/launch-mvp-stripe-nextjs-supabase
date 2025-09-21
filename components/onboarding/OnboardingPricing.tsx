@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
-import { supabase } from '@/utils/supabase';
+// Removed direct supabase import - using API endpoints instead
 import { getOnboardingPricingTiers, type PricingTier } from '@/config/pricing';
 
 interface OnboardingPricingProps {
@@ -21,18 +21,21 @@ export function OnboardingPricing({ userId, userEmail }: OnboardingPricingProps)
     setIsLoading(tier.id);
     
     try {
-      // Track selection in database
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
+      // Track selection in database via API
+      const response = await fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_id: userId,
           selected_plan_id: tier.id,
-          onboarding_step: 2,
-          onboarding_started_at: new Date().toISOString()
-        });
+          onboarding_step: 2
+        }),
+      });
 
-      if (error) {
-        console.error('Error tracking plan selection:', error);
+      if (!response.ok) {
+        console.error('Error tracking plan selection:', await response.text());
       }
 
       // Redirect to Stripe Payment Link with prefilled data
@@ -124,7 +127,7 @@ export function OnboardingPricing({ userId, userEmail }: OnboardingPricingProps)
                   : 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'
               }`}
             >
-              {isLoading === tier.id ? (
+{isLoading === tier.id ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                   Redirecting...

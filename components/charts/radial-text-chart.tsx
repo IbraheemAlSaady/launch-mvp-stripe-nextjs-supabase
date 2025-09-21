@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { TrendingUp } from "lucide-react";
 import {
   Label,
@@ -27,6 +28,12 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function RadialTextChart() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <Card className="flex flex-col">
       {/* <CardHeader className="items-center pb-0">
@@ -73,7 +80,7 @@ export function RadialTextChart() {
                           y={viewBox.cy}
                           className="fill-slate-900 dark:fill-white text-4xl font-bold"
                         >
-                          {chartData[0].visitors.toLocaleString()}
+                          {mounted ? chartData[0].visitors.toLocaleString() : chartData[0].visitors}
                         </tspan>
                         <tspan
                           x={viewBox.cx}

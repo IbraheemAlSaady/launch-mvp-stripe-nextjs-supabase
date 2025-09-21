@@ -16,6 +16,8 @@ create table public.user_preferences (
   has_completed_onboarding boolean null default false,
   created_at timestamp with time zone not null default timezone ('utc'::text, now()),
   updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  onboarding_step integer DEFAULT 1,
+  onboarding_completed_at timestamp with time zone,
   constraint user_preferences_pkey primary key (id),
   constraint user_preferences_user_id_key unique (user_id),
   constraint user_preferences_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE

@@ -13,13 +13,19 @@ export default async function OnboardingSuccessPage() {
 
   try {
     // Mark onboarding as complete
-    const { error: onboardingError } = await supabase
-      .from('user_preferences')
-      .upsert({
+    const onboardingResponse = await fetch('/api/user/preferences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         user_id: user.id,
         has_completed_onboarding: true,
         onboarding_completed_at: new Date().toISOString()
-      });
+      }),
+    });
+
+    const onboardingError = !onboardingResponse.ok;
 
     if (onboardingError) {
       console.error('OnboardingSuccess: Error updating onboarding status:', onboardingError);

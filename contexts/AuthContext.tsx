@@ -47,25 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSubscription = useCallback(async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .in('status', ['active', 'trialing'])
-        .order('created_at', { ascending: false })
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Subscription check error:', error);
+      const response = await fetch(`/api/user/subscription?user_id=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Subscription check error:', response.status);
         setIsSubscriber(false);
         return;
       }
 
-      const isValid = data && 
-        ['active', 'trialing'].includes(data.status) && 
-        new Date(data.current_period_end) > new Date();
-
-      setIsSubscriber(!!isValid);
+      const result = await response.json();
+      setIsSubscriber(!!result.isSubscriber);
     } catch (error) {
       console.error('Subscription check error:', error);
       setIsSubscriber(false);
@@ -150,25 +146,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (authError) throw authError;
 
-      // Check if user was previously soft-deleted
-      const { data: profile } = await supabase
-        .from('users')
-        .select('is_deleted, deleted_at')
-        .eq('id', authData.user?.id)
-        .single();
-
-      if (profile?.is_deleted) {
-        // Reactivate the account
-        await supabase
-          .from('users')
-          .update({ 
-            is_deleted: false, 
-            deleted_at: null,
-            reactivated_at: new Date().toISOString() 
-          })
-          .eq('id', authData.user?.id);
-
-        // You could trigger a welcome back notification here
+      // Check if user was previously soft-deleted and reactivate via API
+      try {
+        await fetch('/api/user/account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'reactivate',
+            user_id: authData.user?.id
+          }),
+        });
+      } catch (error) {
+        // Silently handle reactivation errors - user can still proceed
+        console.warn('Account reactivation check failed:', error);
       }
 
       return authData;
@@ -219,33 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (error) throw error;
     },
-    deleteAccount: async () => {
-      // First delete user data from any related tables
-      const { error: dataError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', user?.id);
-      
-      if (dataError) throw dataError;
-
-      // Then delete the user's subscription if it exists
-      const { error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .delete()
-        .eq('user_id', user?.id);
-
-      if (subscriptionError) throw subscriptionError;
-
-      // Finally delete the user's auth account
-      const { error: authError } = await supabase.auth.admin.deleteUser(
-        user?.id as string
-      );
-
-      if (authError) throw authError;
-
-      // Sign out after successful deletion
-      await supabase.auth.signOut();
-    },
+    // deleteAccount functionality moved to dedicated API endpoint for security
     isSubscriber,
   };
 

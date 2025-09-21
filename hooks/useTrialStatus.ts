@@ -20,11 +20,15 @@ export function useTrialStatus() {
 
       try {
         // First check if user has an active subscription
-        const { data: subscription } = await supabase
-          .from('subscriptions')
-          .select('status')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const trialResponse = await fetch(`/api/user/trial?user_id=${user.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const trialData = trialResponse.ok ? await trialResponse.json() : null;
+        const subscription = trialData?.subscription;
 
         // If user has an active subscription, skip trial creation
         if (subscription?.status === 'active' || subscription?.status === 'trialing') {
@@ -38,14 +42,12 @@ export function useTrialStatus() {
         }
 
         // Check if user has an existing trial
-        const { data: trial, error: trialError } = await supabase
-          .from('user_trials')
-          .select('trial_end_time, is_trial_used')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const trial = trialData?.trial;
+        const trialError = !trialResponse.ok;
 
-        if (trialError && trialError.code !== 'PGRST116') { // PGRST116 is "not found" error
-          throw trialError;
+        if (trialError) {
+          console.error('Failed to fetch trial status:', trialError);
+          return;
         }
 
         if (trial) {

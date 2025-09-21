@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/LoginForm';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { LoginSkeleton } from '@/components/ui/skeleton';
 
 export default function LoginPage() {
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
@@ -50,11 +51,7 @@ export default function LoginPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-foreground">Loading...</div>
-      </div>
-    );
+    return <LoginSkeleton />;
   }
 
   return (

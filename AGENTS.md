@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 This file provides essential guidance for AI coding assistants working with Next.js 15, React 19, TypeScript, and Supabase.
 

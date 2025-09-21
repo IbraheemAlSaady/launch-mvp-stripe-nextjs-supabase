@@ -7,6 +7,7 @@ import ProtectedRoute from '@/contexts/ProtectedRoute';
 import TopBar from '@/components/TopBar';
 import { Analytics } from "@vercel/analytics/react"
 import { usePathname } from 'next/navigation';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 // import { PostHogProvider } from '@/contexts/PostHogContext';
 // import { PostHogErrorBoundary } from '@/components/PostHogErrorBoundary';
 
@@ -22,16 +23,18 @@ export default function RootLayout({
       <head>
       </head>
       <body className={geist.className}>
-        <Analytics mode="auto" />
-        {/* <PostHogErrorBoundary>
-          <PostHogProvider> */}
-            <AuthProvider>   
-                <ProtectedRoute>
-                  <LayoutContent>{children}</LayoutContent>
-                </ProtectedRoute>
-            </AuthProvider>
-          {/* </PostHogProvider>
-        </PostHogErrorBoundary> */}
+        <ThemeProvider>
+          <Analytics mode="auto" />
+          {/* <PostHogErrorBoundary>
+            <PostHogProvider> */}
+              <AuthProvider>   
+                  <ProtectedRoute>
+                    <LayoutContent>{children}</LayoutContent>
+                  </ProtectedRoute>
+              </AuthProvider>
+            {/* </PostHogProvider>
+          </PostHogErrorBoundary> */}
+        </ThemeProvider>
       </body>
     </html>
   );

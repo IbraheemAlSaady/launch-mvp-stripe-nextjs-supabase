@@ -3,14 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabase';
 
 interface OnboardingData {
   user_id: string;
   has_completed_onboarding: boolean;
   onboarding_step?: number;
   selected_plan_id?: string;
-  onboarding_started_at?: string;
   onboarding_completed_at?: string;
 }
 
@@ -45,28 +43,18 @@ export function useOnboarding() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select(`
-          user_id,
-          has_completed_onboarding,
-          onboarding_step,
-          selected_plan_id,
-          onboarding_started_at,
-          onboarding_completed_at
-        `)
-        .eq('user_id', user.id)
-        .single();
+      const response = await fetch(`/api/user/preferences?user_id=${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        throw error;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: OnboardingData | null = data || {
-        user_id: user.id,
-        has_completed_onboarding: false,
-        onboarding_step: 1
-      };
+      const result: OnboardingData = await response.json();
       
       // Update cache
       onboardingCache.set(user.id, {
@@ -97,11 +85,18 @@ export function useOnboarding() {
         updateData.selected_plan_id = planId;
       }
 
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert(updateData);
+      const response = await fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update onboarding step');
+      }
 
       // Update local state
       setOnboardingData(prev => prev ? { ...prev, ...updateData } : null);
@@ -121,16 +116,23 @@ export function useOnboarding() {
     setIsCompleting(true);
     
     try {
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
+      const response = await fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_id: user.id,
           has_completed_onboarding: true,
           selected_plan_id: selectedPlan,
           onboarding_completed_at: new Date().toISOString()
-        });
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to complete onboarding');
+      }
 
       // Update local state
       setOnboardingData(prev => prev ? {
@@ -153,18 +155,24 @@ export function useOnboarding() {
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
+      const response = await fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_id: user.id,
           has_completed_onboarding: false,
           onboarding_step: 1,
           selected_plan_id: null,
-          onboarding_started_at: new Date().toISOString(),
           onboarding_completed_at: null
-        });
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reset onboarding');
+      }
 
       // Clear cache and refetch
       onboardingCache.delete(user.id);
@@ -180,32 +188,8 @@ export function useOnboarding() {
     fetchOnboardingStatus();
   }, [fetchOnboardingStatus]);
 
-  // Listen for real-time updates to user_preferences
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('onboarding_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'user_preferences',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          const newData = payload.new as OnboardingData;
-          setOnboardingData(newData);
-          setSelectedPlan(newData.selected_plan_id || null);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
+  // Removed real-time updates to prevent direct Supabase usage
+  // Consider implementing polling or WebSocket if real-time updates are needed
 
   return {
     onboardingData,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { TrendingUp } from "lucide-react";
 import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 
@@ -27,7 +28,12 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function RadialStackedChart() {
+  const [mounted, setMounted] = useState(false);
   const totalVisitors = chartData[0].desktop + chartData[0].mobile;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <Card className="flex flex-col">
@@ -54,7 +60,7 @@ export function RadialStackedChart() {
                           y={(viewBox.cy || 0) - 16}
                           className="fill-slate-900 dark:fill-white text-2xl font-bold"
                         >
-                          {totalVisitors.toLocaleString()}
+                          {mounted ? totalVisitors.toLocaleString() : totalVisitors}
                         </tspan>
                         <tspan
                           x={viewBox.cx}

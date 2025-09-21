@@ -75,11 +75,15 @@ export function OnboardingTour({ isFirstTime, onComplete }: OnboardingTourProps)
       }
 
       // Check if user has completed onboarding
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('has_completed_onboarding')
-        .eq('user_id', user.id)
-        .single();
+      const response = await fetch(`/api/user/preferences?user_id=${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = response.ok ? await response.json() : null;
+      const error = !response.ok;
 
       if (error) {
         console.error('Failed to fetch onboarding status:', error);
@@ -122,14 +126,18 @@ export function OnboardingTour({ isFirstTime, onComplete }: OnboardingTourProps)
     }
 
     // Upsert user preferences
-    const { error } = await supabase
-      .from('user_preferences')
-      .upsert({
+    const response = await fetch('/api/user/preferences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         user_id: user.id,
         has_completed_onboarding: true
-      }, {
-        onConflict: 'user_id'
-      });
+      }),
+    });
+
+    const error = !response.ok;
 
     if (error) {
       console.error('Failed to update onboarding status:', error);

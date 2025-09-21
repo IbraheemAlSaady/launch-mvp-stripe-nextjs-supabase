@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
+import { useTheme } from '@/hooks/useTheme';
 import { LayoutDashboard, Settings, LogOut, Moon, Sun } from 'lucide-react';
 // import { supabase } from '@/utils/supabase';
 
@@ -18,47 +19,10 @@ export default function TopBar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { subscription, isLoading: isLoadingSubscription } = useSubscription();
   const { isInTrial } = useTrialStatus();
+  const { isDark, toggleTheme, mounted } = useTheme();
 
   // State for tracking logout process
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  // Theme management state
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Initialize theme on component mount
-  useEffect(() => {
-    const checkTheme = () => {
-      const isDark = document.documentElement.classList.contains('dark');
-      setIsDarkMode(isDark);
-    };
-    
-    checkTheme();
-    
-    // Watch for theme changes
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Theme toggle function
-  const toggleTheme = () => {
-    const html = document.documentElement;
-    const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
-    
-    if (newTheme === 'dark') {
-      html.classList.add('dark');
-      localStorage.theme = 'dark';
-    } else {
-      html.classList.remove('dark');
-      localStorage.theme = 'light';
-    }
-    
-    setIsDarkMode(newTheme === 'dark');
-  };
 
   // Handle click outside dropdown to close it
   useEffect(() => {
@@ -134,17 +98,22 @@ export default function TopBar() {
               )}
 
               {/* Theme Toggle Button */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-neutral-darker/10 dark:hover:bg-neutral-darker/50 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                ) : (
-                  <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                )}
-              </button>
+              {mounted ? (
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-full hover:bg-neutral-darker/10 dark:hover:bg-neutral-darker/50 transition-colors"
+                  aria-label="Toggle theme"
+                >
+                  {isDark ? (
+                    <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  ) : (
+                    <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  )}
+                </button>
+              ) : (
+                // Render nothing during SSR to avoid hydration mismatch
+                <div className="p-2 w-9 h-9" />
+              )}
               
               <div className="relative" ref={dropdownRef}>
                 {/* Avatar button */}
