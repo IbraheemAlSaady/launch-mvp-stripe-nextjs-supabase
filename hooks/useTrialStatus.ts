@@ -46,7 +46,6 @@ export function useTrialStatus() {
         const trialError = !trialResponse.ok;
 
         if (trialError) {
-          console.error('Failed to fetch trial status:', trialError);
           return;
         }
 

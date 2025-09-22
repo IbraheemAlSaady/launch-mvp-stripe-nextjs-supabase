@@ -24,39 +24,48 @@ export async function GET(request: Request) {
 
     if (user) {
       // Warm cache by triggering auth data fetch in background (non-blocking)
-      // This will make the AuthContext initialization much faster
-      fetch(`${baseUrl}/api/user/auth-data?user_id=${user.id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      }).catch(() => {
-        // Silently handle errors - this is just cache warming
-      });
+      // Use relative URL to avoid baseUrl issues in deployment
+      try {
+        fetch(`/api/user/auth-data?user_id=${user.id}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        }).catch(() => {
+          // Silently handle errors - this is just cache warming
+        });
+      } catch {
+        // Ignore cache warming errors completely
+      }
 
-      // Check if user needs onboarding (keep existing logic for redirect decision)
-      const preferencesResult = await supabase
-        .from('user_preferences')
-        .select('has_completed_onboarding')
-        .eq('user_id', user.id)
-        .single();
+      // Check if user needs onboarding with error handling
+      let needsOnboarding = true; // Default to safe onboarding flow
       
-      let preferences = preferencesResult.data;
-      const error = preferencesResult.error;
-      
-      // If no preferences record exists, create one
-      if (error && error.code === 'PGRST116') {
-        const { data: newPreferences } = await supabase
+      try {
+        const preferencesResult = await supabase
           .from('user_preferences')
-          .insert({
-            user_id: user.id,
-            has_completed_onboarding: false
-          })
           .select('has_completed_onboarding')
+          .eq('user_id', user.id)
           .single();
         
-        preferences = newPreferences;
+        let preferences = preferencesResult.data;
+        
+        // If no preferences record exists, create one
+        if (preferencesResult.error && preferencesResult.error.code === 'PGRST116') {
+          const { data: newPreferences } = await supabase
+            .from('user_preferences')
+            .insert({
+              user_id: user.id,
+              has_completed_onboarding: false
+            })
+            .select('has_completed_onboarding')
+            .single();
+          
+          preferences = newPreferences;
+        }
+        
+        needsOnboarding = !preferences?.has_completed_onboarding;
+      } catch {
+        needsOnboarding = true; // Safe default
       }
-      
-      const needsOnboarding = !preferences?.has_completed_onboarding;
 
       // Redirect to the next page if provided, otherwise check onboarding status
       if (next) {
@@ -66,7 +75,7 @@ export async function GET(request: Request) {
       const redirectTo = needsOnboarding 
         ? `${baseUrl}/onboarding`
         : `${baseUrl}/dashboard`;
-        
+      
       return NextResponse.redirect(redirectTo);
     }
 

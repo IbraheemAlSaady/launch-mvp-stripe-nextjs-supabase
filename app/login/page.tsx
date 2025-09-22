@@ -40,9 +40,10 @@ export default function LoginPage() {
     }
   };
 
-  // If user is authenticated, show skeleton while redirect happens
-  if (user) {
-    return <LoginSkeleton />;
+  // If user is authenticated, don't show anything (prevents flash)
+  // This check is more immediate than waiting for redirect
+  if (user && !authLoading) {
+    return null;
   }
   
   // Show skeleton when form is submitting or auth is loading
