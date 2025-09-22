@@ -131,15 +131,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     supabase,
     signInWithGoogle: async () => {
-      // Force the correct redirect URL, prioritizing environment variable
-      const redirectUrl = process.env.NEXT_PUBLIC_APP_URL 
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
-        : `${window.location.origin}/auth/callback`;
-      
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: "https://rocketstart.dev/auth/callback"
+          redirectTo: `${baseUrl}/auth/callback`
         }
       });
     },
@@ -188,11 +184,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     signUpWithEmail: async (email: string, password: string) => {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${baseUrl}/auth/callback`
         }
       });
       if (error) throw error;
@@ -211,8 +208,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
     },
     resetPassword: async (email: string) => {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`
+        redirectTo: `${baseUrl}/update-password`
       });
       if (error) throw error;
     },

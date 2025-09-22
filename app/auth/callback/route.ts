@@ -6,6 +6,9 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const next = requestUrl.searchParams.get('next');
+  
+  // Use environment variable for redirects instead of requestUrl.origin
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin;
 
   if (code) {
     const supabase = createRouteHandlerClient({ cookies });
@@ -13,7 +16,7 @@ export async function GET(request: Request) {
     
     if (error) {
       console.error('AuthCallback: Error:', error);
-      return NextResponse.redirect(new URL('/login?error=auth-failed', requestUrl.origin));
+      return NextResponse.redirect(new URL('/login?error=auth-failed', baseUrl));
     }
 
     // Get the authenticated user
@@ -48,18 +51,18 @@ export async function GET(request: Request) {
 
       // Redirect to the next page if provided, otherwise check onboarding status
       if (next) {
-        return NextResponse.redirect(new URL(next, requestUrl.origin));
+        return NextResponse.redirect(new URL(next, baseUrl));
       }
 
       const redirectTo = needsOnboarding 
-        ? `${requestUrl.origin}/onboarding`
-        : `${requestUrl.origin}/dashboard`;
+        ? `${baseUrl}/onboarding`
+        : `${baseUrl}/dashboard`;
         
       return NextResponse.redirect(redirectTo);
     }
 
-    return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
+    return NextResponse.redirect(new URL('/dashboard', baseUrl));
   }
 
-  return NextResponse.redirect(new URL('/login', requestUrl.origin));
+  return NextResponse.redirect(new URL('/login', baseUrl));
 } 
