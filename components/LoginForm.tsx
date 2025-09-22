@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
-import { Chrome } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string, isSignUp: boolean) => Promise<void>;
@@ -49,7 +49,7 @@ export function LoginForm({
           onClick={onGoogleSignIn}
           className="w-full py-2.5 px-4 border border-gray-200 dark:border-gray-700 rounded-full shadow-subtle text-text dark:text-text-dark bg-surface-light dark:bg-surface-dark hover:bg-neutral dark:hover:bg-neutral-dark transition-all flex items-center justify-center"
         >
-          <Chrome className="w-5 h-5 mr-2" />
+          <FcGoogle className="w-5 h-5 mr-2" />
           Sign in with Google
         </button>
 
