@@ -103,13 +103,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const optimisticData = AuthService.getOptimisticAuthData(currentUser);
           if (optimisticData) {
             setAuthData(optimisticData);
-            setIsLoading(false); // Can navigate immediately with cached data
+            // Don't set loading to false immediately - let the fresh data load complete
+            // This ensures better coordination with redirect logic
           }
 
           // Load fresh auth data in parallel (always fetch to ensure data is current)
           loadAuthData(currentUser, session).finally(() => {
-            if (mounted && !optimisticData) {
-              setIsLoading(false); // Only set loading false if we didn't have optimistic data
+            if (mounted) {
+              setIsLoading(false); // Set loading false after auth data is loaded
             }
           });
         } else {

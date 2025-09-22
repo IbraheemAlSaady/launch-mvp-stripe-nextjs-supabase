@@ -21,14 +21,14 @@ const PUBLIC_ROUTES = [
 ];
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, authData, isLoading: authLoading } = useAuth();
   const { shouldShowPage, redirectIfNeeded, isLoading, hasOptimisticData } = useNavigation();
   const pathname = usePathname();
 
   useEffect(() => {
     // Use the optimized navigation logic
     redirectIfNeeded(pathname);
-  }, [pathname, redirectIfNeeded]);
+  }, [pathname, redirectIfNeeded, user, authData]); // Add auth state dependencies
 
   // Show loading state only when necessary (much faster)
   if (isLoading && !hasOptimisticData) {
