@@ -1,7 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
+import { AuthService, type AuthData } from '@/services/AuthService';
 import { 
   Session, 
   User, 
@@ -28,6 +30,8 @@ interface AuthContextType {
   updateEmail: (newEmail: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   isSubscriber: boolean;
+  hasCompletedOnboarding: boolean;
+  authData: AuthData | null;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -43,28 +47,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubscriber, setIsSubscriber] = useState(false);
+  const [authData, setAuthData] = useState<AuthData | null>(null);
+  const router = useRouter();
 
-  const checkSubscription = useCallback(async (userId: string) => {
+  const loadAuthData = useCallback(async (currentUser: User | null, currentSession: Session | null) => {
     try {
-      const response = await fetch(`/api/user/subscription?user_id=${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        console.error('Subscription check error:', response.status);
-        setIsSubscriber(false);
-        return;
-      }
-
-      const result = await response.json();
-      setIsSubscriber(!!result.isSubscriber);
+      const data = await AuthService.fetchAuthData(currentUser, currentSession);
+      setAuthData(data);
+      return data;
     } catch (error) {
-      console.error('Subscription check error:', error);
-      setIsSubscriber(false);
+      console.error('Auth data load error:', error);
+      setAuthData({
+        user: currentUser,
+        session: currentSession,
+        isSubscriber: false,
+        hasCompletedOnboarding: false,
+        selectedPlan: null,
+        subscription: null
+      });
+      return null;
     }
   }, []);
 
@@ -75,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setIsLoading(true);
 
-        // // First, get initial session
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error || !mounted) {
@@ -88,11 +89,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
+        // Load auth data in parallel (non-blocking)
         if (currentUser) {
-          await checkSubscription(currentUser.id);
+          loadAuthData(currentUser, session).finally(() => {
+            if (mounted) setIsLoading(false);
+          });
+        } else {
+          setAuthData(null);
+          setIsLoading(false);
         }
         
-        // Then set up listener for future changes
+        // Set up listener for future changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (_event, newSession) => {
             if (!mounted) return;
@@ -102,16 +109,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(newUser);
             
             if (newUser) {
-              await checkSubscription(newUser.id);
+              // Non-blocking auth data load
+              loadAuthData(newUser, newSession);
             } else {
-              setIsSubscriber(false);
+              setAuthData(null);
+              AuthService.clearCache();
             }
           }
         );
 
-        // Only set loading to false after everything is initialized
-        if (mounted) setIsLoading(false);
-        
         return () => {
           mounted = false;
           subscription.unsubscribe();
@@ -123,7 +129,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [checkSubscription]);
+    
+    // Subscribe to AuthService updates
+    const unsubscribe = AuthService.subscribe((data) => {
+      if (mounted) {
+        setAuthData(data);
+      }
+    });
+    
+    return unsubscribe;
+  }, [loadAuthData]);
 
   const value = {
     user,
@@ -171,16 +186,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // First cleanup all active connections/states
         window.dispatchEvent(new Event('cleanup-before-logout'));
         
+        // Clear auth service cache
+        AuthService.clearCache();
+        
         // Wait a small amount of time for cleanup
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Then perform the actual signout
         await supabase.auth.signOut();
         
-        // Force redirect to login
-        window.location.assign('/login');
+        // Use Next.js router for faster redirect
+        router.replace('/login');
       } catch (error) {
         console.error('Error signing out:', error);
+        // Fallback to window.location if router fails
+        window.location.assign('/login');
       }
     },
     signUpWithEmail: async (email: string, password: string) => {
@@ -215,7 +235,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
     },
     // deleteAccount functionality moved to dedicated API endpoint for security
-    isSubscriber,
+    isSubscriber: authData?.isSubscriber || false,
+    hasCompletedOnboarding: authData?.hasCompletedOnboarding || false,
+    authData,
   };
 
 

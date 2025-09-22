@@ -1,27 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/LoginForm';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import { LoginSkeleton } from '@/components/ui/skeleton';
 
 export default function LoginPage() {
-  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
-  const { hasCompletedOnboarding, isLoading: isOnboardingLoading } = useOnboarding();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const router = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (user && !isOnboardingLoading) {
-      const redirectTo = hasCompletedOnboarding ? '/dashboard' : '/onboarding';
-      router.replace(redirectTo);
-    } else if (!user) {
-      setIsLoading(false);
-    }
-  }, [user, hasCompletedOnboarding, isOnboardingLoading, router]);
 
   const handleSubmit = async (email: string, password: string, isSignUp: boolean) => {
     setError('');
@@ -38,10 +28,10 @@ export default function LoginPage() {
           return;
         }
         
-        // The useEffect will handle the redirect after user state updates
+        // AuthContext will handle redirect automatically
       } else {
         await signInWithEmail(email, password);
-        // The useEffect will handle the redirect after user state updates
+        // AuthContext will handle redirect automatically
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Authentication failed');

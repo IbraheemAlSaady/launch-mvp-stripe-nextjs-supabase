@@ -2,13 +2,13 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import {usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { DashboardSkeleton } from '@/components/DashboardSkeleton';
 import { ProfileSkeleton } from '@/components/ProfileSkeleton';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { ChartsSkeleton } from '@/components/ChartsSkeleton';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-// import { useRouter, usePathname } from 'next/navigation';
 
 // List of public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -21,19 +21,17 @@ const PUBLIC_ROUTES = [
 ];
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  // const router = useRouter();
+  const { user } = useAuth();
+  const { shouldShowPage, redirectIfNeeded, isLoading, hasOptimisticData } = useNavigation();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading && !user && !PUBLIC_ROUTES.includes(pathname)) {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
-      window.location.assign(redirectUrl);
-    }
-  }, [user, isLoading, pathname]);
+    // Use the optimized navigation logic
+    redirectIfNeeded(pathname);
+  }, [pathname, redirectIfNeeded]);
 
-  // Show loading state only if actually loading
-  if (isLoading) {
+  // Show loading state only when necessary (much faster)
+  if (isLoading && !hasOptimisticData) {
     // Show appropriate skeleton for each route
     if (pathname === '/dashboard') {
       return (
@@ -62,10 +60,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <PageSkeleton showHeader={false} />;
   }
 
-  // Only render children if we're on a public route or user is authenticated
-  if (PUBLIC_ROUTES.includes(pathname) || user) {
+  // Use optimized navigation logic to determine if page should show
+  if (shouldShowPage(pathname)) {
     return <>{children}</>;
   }
 
+  // If we shouldn't show the page, return null (redirect will happen)
   return null;
 } 

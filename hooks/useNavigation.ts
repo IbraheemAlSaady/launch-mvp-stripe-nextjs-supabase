@@ -1,63 +1,93 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOnboarding } from '@/hooks/useOnboarding';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useTrialStatus } from '@/hooks/useTrialStatus';
+import { AuthService } from '@/services/AuthService';
 
 export function useNavigation() {
-  const { user, isSubscriber, isLoading: isAuthLoading } = useAuth();
-  const { hasCompletedOnboarding, selectedPlan, isLoading: isOnboardingLoading } = useOnboarding();
-  const { subscription, isLoading: isSubLoading } = useSubscription();
-  const { isLoading: isTrialLoading } = useTrialStatus();
+  const { user, authData, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
 
-  const isLoading = isAuthLoading || isOnboardingLoading || isSubLoading || isTrialLoading;
+  // Use optimistic data for immediate navigation decisions
+  const optimisticAuthData = useMemo(() => {
+    if (authData) return authData;
+    if (!user) return null;
+    return AuthService.getOptimisticAuthData(user);
+  }, [authData, user]);
 
-  // Single source of truth for where user should be
-  const getDestination = () => {
-    if (!user) {
-      return '/login';
-    }
+  // Simple auth state check
+  const getAuthState = () => {
+    if (!user) return 'unauthenticated';
     
-    // Simple: If no subscription, go to onboarding (ignore trial)
-    if (!isSubscriber) {
-      return '/onboarding';
-    }
+    const dataToUse = optimisticAuthData || authData;
+    if (!dataToUse?.isSubscriber) return 'needs_onboarding';
     
-    // If has subscription, go to dashboard
-    return '/dashboard';
+    return 'authenticated';
+  };
+  
+  // Only determine where to redirect for initial auth decisions
+  const getRedirectDestination = () => {
+    const authState = getAuthState();
+    
+    if (authState === 'unauthenticated') return '/login';
+    if (authState === 'needs_onboarding') return '/onboarding';
+    return '/dashboard'; // Default for authenticated users
   };
 
   const redirectIfNeeded = (currentPath: string) => {
-    if (isLoading) return;
+    // Don't redirect if we're still loading auth state AND we have no optimistic data
+    if (isAuthLoading && !optimisticAuthData) return;
     
-    const destination = getDestination();
+    const authState = getAuthState();
     
-    if (currentPath !== destination) {
-      router.replace(destination);
+    // Redirect unauthenticated users to login
+    if (authState === 'unauthenticated' && currentPath !== '/login') {
+      router.replace('/login');
+    } 
+    // Redirect users without subscription to onboarding
+    else if (authState === 'needs_onboarding' && currentPath !== '/onboarding') {
+      router.replace('/onboarding');
+    }
+    // Redirect authenticated users away from login page
+    else if (authState === 'authenticated' && currentPath === '/login') {
+      router.replace('/dashboard');
     }
   };
 
   const shouldShowPage = (currentPath: string) => {
-    if (isLoading) {
-      // During loading, don't show dashboard if user clearly has no subscription
-      if (currentPath === '/dashboard' && user && !isSubscriber) {
-        return false;
-      }
+    // Public routes are always accessible
+    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password'];
+    if (publicRoutes.includes(currentPath)) {
       return true;
     }
     
-    // After loading, show page only if user should be there
-    return getDestination() === currentPath;
+    // During loading, be permissive
+    if (isAuthLoading && !optimisticAuthData) {
+      return true;
+    }
+    
+    const authState = getAuthState();
+    
+    // Simple access control
+    if (authState === 'unauthenticated') {
+      return publicRoutes.includes(currentPath);
+    }
+    
+    if (authState === 'needs_onboarding') {
+      return currentPath === '/onboarding';
+    }
+    
+    // If authenticated with subscription, allow access to any protected page
+    return true;
   };
 
   return {
     redirectIfNeeded,
-    getDestination,
+    getDestination: getRedirectDestination,
     shouldShowPage,
-    isLoading
+    isLoading: isAuthLoading && !optimisticAuthData,
+    hasOptimisticData: !!optimisticAuthData,
+    authData: optimisticAuthData || authData
   };
 }

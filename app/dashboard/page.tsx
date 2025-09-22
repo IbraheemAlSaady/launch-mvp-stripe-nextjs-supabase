@@ -3,8 +3,6 @@
 // import { useWebSocket } from '@/contexts/WebSocketContext';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/hooks/useSubscription';
-// import { OnboardingTour } from '@/components/OnboardingTour';
 import { useNavigation } from '@/hooks/useNavigation';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -83,8 +81,8 @@ const recentActivity = [
 
 export default function Dashboard() {
   const { user, isSubscriber } = useAuth();
-  const { subscription, fetchSubscription } = useSubscription();
-  const { redirectIfNeeded, shouldShowPage, isLoading } = useNavigation();
+  const { redirectIfNeeded, shouldShowPage, isLoading, authData } = useNavigation();
+  const subscription = authData?.subscription;
   
   // Track individual loading states for better UX
   const [isMetricsLoading, setIsMetricsLoading] = useState(true);
@@ -101,12 +99,7 @@ export default function Dashboard() {
     redirectIfNeeded('/dashboard');
   }, [redirectIfNeeded]);
 
-  // Refresh subscription data when user changes
-  useEffect(() => {
-    if (user?.id) {
-      fetchSubscription();
-    }
-  }, [user?.id, fetchSubscription]);
+  // Navigation handled by useNavigation hook - no need for separate subscription fetching
 
   // Check for payment success
   const isPaymentSuccess = useMemo(() => {
