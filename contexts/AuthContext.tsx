@@ -136,12 +136,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
         : `${window.location.origin}/auth/callback`;
       
-      console.log('🔍 Google OAuth Redirect URL:', redirectUrl);
-      
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl
+          redirectTo: "https://rocketstart.dev/auth/callback"
         }
       });
     },
