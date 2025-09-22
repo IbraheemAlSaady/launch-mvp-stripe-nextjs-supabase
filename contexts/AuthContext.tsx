@@ -51,21 +51,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const loadAuthData = useCallback(async (currentUser: User | null, currentSession: Session | null) => {
+    if (!currentUser) {
+      setAuthData(null);
+      return null;
+    }
+
     try {
       const data = await AuthService.fetchAuthData(currentUser, currentSession);
       setAuthData(data);
       return data;
     } catch (error) {
       console.error('Auth data load error:', error);
-      setAuthData({
+      
+      // Create fallback auth data with safe defaults
+      const fallbackData = {
         user: currentUser,
         session: currentSession,
         isSubscriber: false,
         hasCompletedOnboarding: false,
         selectedPlan: null,
         subscription: null
-      });
-      return null;
+      };
+      
+      setAuthData(fallbackData);
+      return fallbackData;
     }
   }, []);
 
@@ -84,15 +93,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Update initial state
+        // Update initial state immediately
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
-        // Load auth data in parallel (non-blocking)
         if (currentUser) {
+          // Check for optimistic cached data first
+          const optimisticData = AuthService.getOptimisticAuthData(currentUser);
+          if (optimisticData) {
+            setAuthData(optimisticData);
+            setIsLoading(false); // Can navigate immediately with cached data
+          }
+
+          // Load fresh auth data in parallel (always fetch to ensure data is current)
           loadAuthData(currentUser, session).finally(() => {
-            if (mounted) setIsLoading(false);
+            if (mounted && !optimisticData) {
+              setIsLoading(false); // Only set loading false if we didn't have optimistic data
+            }
           });
         } else {
           setAuthData(null);
@@ -109,7 +127,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(newUser);
             
             if (newUser) {
-              // Non-blocking auth data load
+              // Check optimistic data first for immediate UI updates
+              const optimisticData = AuthService.getOptimisticAuthData(newUser);
+              if (optimisticData) {
+                setAuthData(optimisticData);
+              }
+              
+              // Load fresh auth data in background
               loadAuthData(newUser, newSession);
             } else {
               setAuthData(null);
@@ -188,6 +212,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Clear auth service cache
         AuthService.clearCache();
+        
+        // Clear local auth state immediately
+        setUser(null);
+        setSession(null);
+        setAuthData(null);
         
         // Wait a small amount of time for cleanup
         await new Promise(resolve => setTimeout(resolve, 100));

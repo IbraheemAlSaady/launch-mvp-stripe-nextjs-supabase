@@ -23,7 +23,16 @@ export async function GET(request: Request) {
     const user = data.user;
 
     if (user) {
-      // Check if user needs onboarding
+      // Warm cache by triggering auth data fetch in background (non-blocking)
+      // This will make the AuthContext initialization much faster
+      fetch(`${baseUrl}/api/user/auth-data?user_id=${user.id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      }).catch(() => {
+        // Silently handle errors - this is just cache warming
+      });
+
+      // Check if user needs onboarding (keep existing logic for redirect decision)
       const preferencesResult = await supabase
         .from('user_preferences')
         .select('has_completed_onboarding')

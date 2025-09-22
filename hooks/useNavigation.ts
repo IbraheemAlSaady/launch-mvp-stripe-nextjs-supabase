@@ -40,13 +40,14 @@ export function useNavigation() {
     if (isAuthLoading && !optimisticAuthData) return;
     
     const authState = getAuthState();
+    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password'];
     
-    // Redirect unauthenticated users to login
-    if (authState === 'unauthenticated' && currentPath !== '/login') {
+    // Only redirect unauthenticated users when they try to access protected routes
+    if (authState === 'unauthenticated' && !publicRoutes.includes(currentPath)) {
       router.replace('/login');
     } 
-    // Redirect users without subscription to onboarding
-    else if (authState === 'needs_onboarding' && currentPath !== '/onboarding') {
+    // Redirect users without subscription to onboarding (except if they're on public routes)
+    else if (authState === 'needs_onboarding' && !publicRoutes.includes(currentPath) && currentPath !== '/onboarding') {
       router.replace('/onboarding');
     }
     // Redirect authenticated users away from login page

@@ -30,6 +30,9 @@ class AuthServiceClass {
   
   // Listeners for auth state changes
   private listeners = new Set<(authData: AuthData) => void>();
+  
+  // Track in-flight requests to prevent duplicate API calls
+  private inFlightRequests = new Map<string, Promise<AuthData>>();
 
   /**
    * Subscribe to auth state changes
@@ -81,6 +84,7 @@ class AuthServiceClass {
 
   /**
    * Fetch all auth data in parallel for maximum performance
+   * Includes request deduplication to prevent duplicate API calls
    */
   async fetchAuthData(user: User | null, session: Session | null): Promise<AuthData> {
     // Return immediately if no user
@@ -105,29 +109,26 @@ class AuthServiceClass {
       return updatedData;
     }
 
-    try {
-      // Use single batch API call for better performance
-      const response = await fetch(`/api/user/auth-data?user_id=${user.id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Auth data fetch failed: ${response.status}`);
+    // Check if request is already in flight for this user
+    const existingRequest = this.inFlightRequests.get(user.id);
+    if (existingRequest) {
+      try {
+        const result = await existingRequest;
+        // Update with current user/session and return
+        return { ...result, user, session };
+      } catch (error) {
+        // If in-flight request failed, continue with new request
+        this.inFlightRequests.delete(user.id);
       }
+    }
 
-      const result = await response.json();
-      const data = result.data;
+    // Create new request and add to in-flight tracking
+    const fetchPromise = this.performAuthDataFetch(user, session);
+    this.inFlightRequests.set(user.id, fetchPromise);
 
-      const authData: AuthData = {
-        user,
-        session,
-        isSubscriber: data.isSubscriber || false,
-        hasCompletedOnboarding: data.hasCompletedOnboarding || false,
-        selectedPlan: data.selectedPlanId || null,
-        subscription: data.subscription || null
-      };
-
+    try {
+      const authData = await fetchPromise;
+      
       // Cache the result
       this.setCachedData(user.id, authData);
       
@@ -149,7 +150,36 @@ class AuthServiceClass {
       };
       
       return errorData;
+    } finally {
+      // Clean up in-flight request
+      this.inFlightRequests.delete(user.id);
     }
+  }
+
+  /**
+   * Perform the actual API call for auth data
+   */
+  private async performAuthDataFetch(user: User, session: Session | null): Promise<AuthData> {
+    const response = await fetch(`/api/user/auth-data?user_id=${user.id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Auth data fetch failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const data = result.data;
+
+    return {
+      user,
+      session,
+      isSubscriber: data.isSubscriber || false,
+      hasCompletedOnboarding: data.hasCompletedOnboarding || false,
+      selectedPlan: data.selectedPlanId || null,
+      subscription: data.subscription || null
+    };
   }
 
   /**
@@ -216,6 +246,7 @@ class AuthServiceClass {
    */
   clearCache(): void {
     this.cache.clear();
+    this.inFlightRequests.clear();
   }
 
   /**
@@ -225,6 +256,19 @@ class AuthServiceClass {
   getOptimisticAuthData(user: User | null): AuthData | null {
     if (!user) return null;
     return this.getCachedData(user.id);
+  }
+
+  /**
+   * Preload auth data (fire and forget)
+   * Used for warming cache during auth flows
+   */
+  preloadAuthData(user: User, session: Session | null): void {
+    // Only preload if not already cached and no request in flight
+    if (!this.getCachedData(user.id) && !this.inFlightRequests.has(user.id)) {
+      this.fetchAuthData(user, session).catch(() => {
+        // Silently handle preload errors
+      });
+    }
   }
 }
 

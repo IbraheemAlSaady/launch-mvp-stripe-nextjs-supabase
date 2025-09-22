@@ -7,7 +7,7 @@ import { LoginForm } from '@/components/LoginForm';
 import { LoginSkeleton } from '@/components/ui/skeleton';
 
 export default function LoginPage() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const router = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +40,12 @@ export default function LoginPage() {
     }
   };
 
+  // If user is authenticated, don't show anything - just let redirect happen
+  if (user) {
+    return null;
+  }
+  
+  // Show skeleton only when form is submitting
   if (isLoading) {
     return <LoginSkeleton />;
   }
