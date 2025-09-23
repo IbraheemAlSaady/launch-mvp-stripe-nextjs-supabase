@@ -36,47 +36,17 @@ export async function GET(request: Request) {
         // Ignore cache warming errors completely
       }
 
-      // Check if user needs onboarding with error handling
-      let needsOnboarding = true; // Default to safe onboarding flow
-      
-      try {
-        const preferencesResult = await supabase
-          .from('user_preferences')
-          .select('has_completed_onboarding')
-          .eq('user_id', user.id)
-          .single();
-        
-        let preferences = preferencesResult.data;
-        
-        // If no preferences record exists, create one
-        if (preferencesResult.error && preferencesResult.error.code === 'PGRST116') {
-          const { data: newPreferences } = await supabase
-            .from('user_preferences')
-            .insert({
-              user_id: user.id,
-              has_completed_onboarding: false
-            })
-            .select('has_completed_onboarding')
-            .single();
-          
-          preferences = newPreferences;
-        }
-        
-        needsOnboarding = !preferences?.has_completed_onboarding;
-      } catch {
-        needsOnboarding = true; // Safe default
-      }
+      // We no longer need to check onboarding status here since the loading page will handle it
+      // This simplifies the callback and reduces complexity
 
-      // Redirect to the next page if provided, otherwise check onboarding status
+      // Redirect to the next page if provided, otherwise go to loading page
       if (next) {
         return NextResponse.redirect(new URL(next, baseUrl));
       }
 
-      const redirectTo = needsOnboarding 
-        ? `${baseUrl}/onboarding`
-        : `${baseUrl}/dashboard`;
-      
-      return NextResponse.redirect(redirectTo);
+      // Always redirect to loading page for smooth UX
+      // The loading page will handle the final redirect based on auth data
+      return NextResponse.redirect(new URL('/auth-loading', baseUrl));
     }
 
     return NextResponse.redirect(new URL('/dashboard', baseUrl));

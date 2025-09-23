@@ -17,7 +17,8 @@ const PUBLIC_ROUTES = [
   '/signup', 
   '/verify-email', 
   '/reset-password', 
-  '/update-password'
+  '/update-password',
+  '/auth-loading'  // Loading page for auth flow
 ];
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {

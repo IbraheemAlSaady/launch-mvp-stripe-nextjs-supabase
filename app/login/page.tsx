@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
 
   // If user is authenticated, don't show anything (prevents flash)
-  // This check is more immediate than waiting for redirect
+  // Only hide if we're certain about the redirect
   if (user && !authLoading) {
     return null;
   }

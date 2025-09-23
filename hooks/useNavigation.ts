@@ -16,14 +16,20 @@ export function useNavigation() {
     return AuthService.getOptimisticAuthData(user);
   }, [authData, user]);
 
-  // Simple auth state check
+  // Simple auth state check with conservative decisions
   const getAuthState = () => {
     if (!user) return 'unauthenticated';
     
     const dataToUse = optimisticAuthData || authData;
-    if (!dataToUse?.isSubscriber) return 'needs_onboarding';
     
-    return 'authenticated';
+    // If we have auth data, use it
+    if (dataToUse) {
+      return dataToUse.isSubscriber ? 'authenticated' : 'needs_onboarding';
+    }
+    
+    // If no auth data yet but we have a user, be conservative
+    // Default to onboarding to avoid dashboard → onboarding redirect
+    return 'needs_onboarding';
   };
   
   // Only determine where to redirect for initial auth decisions
@@ -37,10 +43,16 @@ export function useNavigation() {
 
   const redirectIfNeeded = (currentPath: string) => {
     // Don't redirect if we're still loading auth state AND we have no optimistic data
-    if (isAuthLoading && !optimisticAuthData) return;
+    if (isAuthLoading && !optimisticAuthData && !user) return;
     
     const authState = getAuthState();
-    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password'];
+    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password', '/auth-loading'];
+    
+    // Simple handling for login page - redirect to loading page for smooth UX
+    if (user && currentPath === '/login') {
+      router.replace('/auth-loading');
+      return;
+    }
     
     // Redirect users who need onboarding to onboarding (regardless of current page)
     if (authState === 'needs_onboarding' && currentPath !== '/onboarding') {
@@ -58,7 +70,7 @@ export function useNavigation() {
 
   const shouldShowPage = (currentPath: string) => {
     // Public routes are always accessible
-    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password'];
+    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password', '/auth-loading'];
     if (publicRoutes.includes(currentPath)) {
       return true;
     }
