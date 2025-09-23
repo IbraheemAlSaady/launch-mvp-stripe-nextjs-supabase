@@ -3,7 +3,7 @@ backend:
   phases:
     build:
       commands:
-        - echo "No backend build required"
+        - npm ci
 frontend:
   phases:
     preBuild:
@@ -20,3 +20,14 @@ frontend:
     paths:
       - node_modules/**/*
       - .next/cache/**/*
+# Environment variables for build process
+environment:
+  variables:
+    # Public variables (available at build time)
+    NEXT_PUBLIC_SUPABASE_URL: $NEXT_PUBLIC_SUPABASE_URL
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: $NEXT_PUBLIC_SUPABASE_ANON_KEY
+    NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL
+    # Server-only variables (API routes only)
+    SUPABASE_SERVICE_ROLE_KEY: $SUPABASE_SERVICE_ROLE_KEY
+    STRIPE_SECRET_KEY: $STRIPE_SECRET_KEY
+    STRIPE_WEBHOOK_SECRET: $STRIPE_WEBHOOK_SECRET

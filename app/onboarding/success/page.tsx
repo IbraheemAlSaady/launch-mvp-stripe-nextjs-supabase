@@ -31,23 +31,22 @@ export default async function OnboardingSuccessPage() {
       console.error('OnboardingSuccess: Error updating onboarding status:', onboardingError);
     }
 
-    // Sync subscription status from Stripe
+    // Refresh auth data after onboarding completion
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/stripe/sync`, {
-        method: 'POST',
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/user/auth-data?user_id=${user.id}`, {
+        method: 'GET',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
-        },
-        body: JSON.stringify({ userId: user.id })
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
-        console.error('OnboardingSuccess: Failed to sync subscription:', response.status);
+        console.error('OnboardingSuccess: Failed to refresh auth data:', response.status);
       }
-    } catch (syncError) {
-      console.error('OnboardingSuccess: Subscription sync error:', syncError);
-      // Don't fail the onboarding completion if sync fails
+    } catch (refreshError) {
+      console.error('OnboardingSuccess: Auth data refresh error:', refreshError);
+      // Don't fail the onboarding completion if refresh fails
     }
 
   } catch (error) {
