@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/utils/supabase-admin';
-import { withCors } from '@/utils/cors';
+// Removed CORS import - not needed for server-to-server webhooks
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -28,12 +28,7 @@ interface StoredSubscriptionData {
 const checkoutSessionMap = new Map<string, StoredSessionData>();
 const pendingSubscriptions = new Map<string, StoredSubscriptionData>();
 
-// Need to disable body parsing for Stripe webhooks
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Note: In Next.js App Router, we handle raw body directly
 
 async function checkExistingSubscription(customerId: string): Promise<boolean> {
   const { data: existingSubs } = await supabaseAdmin
@@ -78,15 +73,38 @@ async function checkExistingSubscription(customerId: string): Promise<boolean> {
 // - checkout.session.async_payment_failed - Async payment failure
 // - checkout.session.expired - When checkout session expires
 
-export const POST = withCors(async function POST(request: NextRequest) {
-  const body = await request.text();
-  const sig = request.headers.get('stripe-signature')!;
-
+export async function POST(request: NextRequest) {
   try {
-    logWebhookEvent('Received webhook request');
-    logWebhookEvent('Stripe signature', sig);
+    // Validate environment variables first
+    if (!process.env.STRIPE_SECRET_KEY) {
+      logWebhookEvent('Missing STRIPE_SECRET_KEY');
+      return NextResponse.json({ error: 'Stripe configuration missing' }, { status: 500 });
+    }
+    
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      logWebhookEvent('Missing STRIPE_WEBHOOK_SECRET');
+      return NextResponse.json({ error: 'Webhook secret missing' }, { status: 500 });
+    }
 
-    const event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    // Get raw body for signature verification
+    const body = await request.text();
+    const sig = request.headers.get('stripe-signature');
+
+    if (!sig) {
+      logWebhookEvent('Missing stripe-signature header');
+      return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+    }
+
+    logWebhookEvent('Received webhook request');
+
+    // Verify the webhook signature
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    } catch (err) {
+      logWebhookEvent('Signature verification failed', err);
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+    }
     logWebhookEvent(`Event received: ${event.type}`, event.data.object);
     
     switch (event.type) {
@@ -229,12 +247,23 @@ export const POST = withCors(async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (err) {
     logWebhookEvent('Webhook error', err);
+    
+    // More specific error handling
+    if (err instanceof Error) {
+      if (err.message.includes('signature')) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      }
+      if (err.message.includes('timestamp')) {
+        return NextResponse.json({ error: 'Invalid timestamp' }, { status: 400 });
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 400 }
+      { error: 'Webhook handler failed', details: err instanceof Error ? err.message : 'Unknown error' },
+      { status: 500 }
     );
   }
-});
+}
 
 async function createSubscription(subscriptionId: string, userId: string, customerId: string) {
   logWebhookEvent('Starting createSubscription', { subscriptionId, userId, customerId });
