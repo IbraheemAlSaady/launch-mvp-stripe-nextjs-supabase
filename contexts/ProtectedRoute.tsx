@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useNavigation } from '@/hooks/useNavigation';
 import { DashboardSkeleton } from '@/components/DashboardSkeleton';
 import { ProfileSkeleton } from '@/components/ProfileSkeleton';
@@ -25,14 +25,18 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const { user } = useAuth();
   const { shouldShowPage, redirectIfNeeded, isLoading, hasOptimisticData } = useNavigation();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Use the optimized navigation logic
-    redirectIfNeeded(pathname);
-  }, [pathname, redirectIfNeeded, user]); // Trigger on path and user changes
+    redirectIfNeeded(pathname, { searchParams });
+  }, [pathname, searchParams, redirectIfNeeded, user]); // Trigger on path, search, and user changes
 
   // Show loading state only when necessary (much faster)
   if (isLoading && !hasOptimisticData) {
+    if (pathname === '/login' || pathname === '/auth-loading') {
+      return <>{children}</>;
+    }
     // Show appropriate skeleton for each route
     if (pathname === '/dashboard') {
       return (
@@ -62,7 +66,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   // Use optimized navigation logic to determine if page should show
-  if (shouldShowPage(pathname)) {
+  if (shouldShowPage(pathname, { searchParams })) {
     return <>{children}</>;
   }
 

@@ -1,12 +1,14 @@
 "use client";
 
 // import { useWebSocket } from '@/contexts/WebSocketContext';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
+import { AuthService } from '@/services/AuthService';
 import { 
   BarChart3, 
   Users, 
@@ -80,8 +82,11 @@ const recentActivity = [
 ];
 
 export default function Dashboard() {
-  const { user, isSubscriber } = useAuth();
+  const { user, session, isSubscriber } = useAuth();
   const { redirectIfNeeded, shouldShowPage, isLoading, authData } = useNavigation();
+  const searchParams = useSearchParams();
+  const hasClearedPaymentFlag = useRef(false);
+  const hasRequestedPaymentRefresh = useRef(false);
   const subscription = authData?.subscription;
   
   // Track individual loading states for better UX
@@ -96,8 +101,8 @@ export default function Dashboard() {
 
   // Centralized navigation logic
   useEffect(() => {
-    redirectIfNeeded('/dashboard');
-  }, [redirectIfNeeded]);
+    redirectIfNeeded('/dashboard', { searchParams });
+  }, [redirectIfNeeded, searchParams]);
 
   // Navigation handled by useNavigation hook - no need for separate subscription fetching
 
@@ -110,12 +115,47 @@ export default function Dashboard() {
 
   // Clean up URL after detecting payment success
   useEffect(() => {
-    if (isPaymentSuccess && typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('payment_success');
-      window.history.replaceState({}, '', url.pathname + url.search);
+    if (!isPaymentSuccess || typeof window === 'undefined') {
+      return;
     }
-  }, [isPaymentSuccess]);
+
+    if (!user || hasRequestedPaymentRefresh.current) {
+      return;
+    }
+
+    hasRequestedPaymentRefresh.current = true;
+
+    const refreshAuthData = async () => {
+      AuthService.invalidateCache(user.id);
+
+      try {
+        await AuthService.fetchAuthData(user, session ?? null);
+      } catch (error) {
+        console.error('Failed to refresh auth data after payment:', error);
+      }
+    };
+
+    void refreshAuthData();
+  }, [isPaymentSuccess, user, session]);
+
+  useEffect(() => {
+    if (!isPaymentSuccess || typeof window === 'undefined' || hasClearedPaymentFlag.current) {
+      return;
+    }
+
+    if (!authData) {
+      return;
+    }
+
+    if (!authData.isSubscriber && !authData.hasCompletedOnboarding) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('payment_success');
+    window.history.replaceState({}, '', url.pathname + url.search);
+    hasClearedPaymentFlag.current = true;
+  }, [isPaymentSuccess, authData]);
 
   // Simulate loading states for dashboard data
   useEffect(() => {
@@ -137,10 +177,10 @@ export default function Dashboard() {
     }
   }, [user, isSubscriber]);
 
-
+  const canShowDashboard = shouldShowPage('/dashboard', { searchParams }) || (isPaymentSuccess && !!user);
 
   // If user shouldn't be on dashboard, show loading or redirect
-  if (!shouldShowPage('/dashboard')) {
+  if (!canShowDashboard) {
     if (isLoading) {
       // User has no subscription but we're still loading - redirect to onboarding
       if (user && !isSubscriber) {

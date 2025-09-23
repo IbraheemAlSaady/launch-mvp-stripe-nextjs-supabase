@@ -1,11 +1,25 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { AuthService } from '@/services/AuthService';
+import { AuthService, type AuthData } from '@/services/AuthService';
 
-export function useNavigation() {
+type AuthState = 'unauthenticated' | 'needs_onboarding' | 'authenticated' | 'loading';
+
+interface RedirectOptions {
+  searchParams?: URLSearchParams | ReadonlyURLSearchParams;
+}
+
+export function useNavigation(): {
+  redirectIfNeeded: (currentPath: string, options?: RedirectOptions) => void;
+  getDestination: () => string;
+  shouldShowPage: (currentPath: string, options?: RedirectOptions) => boolean;
+  isLoading: boolean;
+  hasOptimisticData: boolean;
+  authData: AuthData | null;
+} {
   const { user, authData, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
 
@@ -17,45 +31,72 @@ export function useNavigation() {
   }, [authData, user]);
 
   // Simple auth state check with conservative decisions
-  const getAuthState = () => {
-    if (!user) return 'unauthenticated';
-    
-    const dataToUse = optimisticAuthData || authData;
-    
-    // If we have auth data, use it
-    if (dataToUse) {
-      return dataToUse.isSubscriber ? 'authenticated' : 'needs_onboarding';
+  const getAuthState = (): AuthState => {
+    if (!user) {
+      return 'unauthenticated';
     }
-    
-    // If no auth data yet but we have a user, be conservative
-    // Default to onboarding to avoid dashboard → onboarding redirect
-    return 'needs_onboarding';
+
+    const dataToUse = optimisticAuthData || authData;
+
+    if (!dataToUse) {
+      return 'loading';
+    }
+
+    const { isSubscriber, hasCompletedOnboarding } = dataToUse;
+
+    if (!isSubscriber && !hasCompletedOnboarding) {
+      return 'needs_onboarding';
+    }
+
+    return 'authenticated';
   };
   
   // Only determine where to redirect for initial auth decisions
-  const getRedirectDestination = () => {
+  const getRedirectDestination = (): string => {
     const authState = getAuthState();
-    
-    if (authState === 'unauthenticated') return '/login';
-    if (authState === 'needs_onboarding') return '/onboarding';
-    return '/dashboard'; // Default for authenticated users
+
+    if (authState === 'unauthenticated') {
+      return '/login';
+    }
+
+    if (authState === 'needs_onboarding') {
+      return '/onboarding';
+    }
+
+    return '/dashboard';
   };
 
-  const redirectIfNeeded = (currentPath: string) => {
-    // Don't redirect if we're still loading auth state AND we have no optimistic data
-    if (isAuthLoading && !optimisticAuthData && !user) return;
-    
-    const authState = getAuthState();
-    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password', '/auth-loading'];
-    
-    // Simple handling for login page - redirect to loading page for smooth UX
-    if (user && currentPath === '/login') {
-      router.replace('/auth-loading');
+  const redirectIfNeeded = (currentPath: string, options?: RedirectOptions): void => {
+    if (isAuthLoading && !optimisticAuthData && !user) {
       return;
     }
-    
-    // Redirect users who need onboarding to onboarding (regardless of current page)
+
+    const authState = getAuthState();
+    const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password', '/auth-loading'];
+    const hasPendingPayment = options?.searchParams?.has('payment_success') ?? false;
+
+    if (authState === 'loading') {
+      return;
+    }
+
+    // Simple handling for login page - redirect to loading page for smooth UX
+    if (user && currentPath === '/login') {
+      if (authState === 'authenticated') {
+        router.replace('/dashboard');
+      } else if (authState === 'needs_onboarding') {
+        if (!hasPendingPayment) {
+          router.replace('/onboarding');
+        }
+      } else {
+        router.replace('/auth-loading');
+      }
+      return;
+    }
+
     if (authState === 'needs_onboarding' && currentPath !== '/onboarding') {
+      if (hasPendingPayment) {
+        return;
+      }
       router.replace('/onboarding');
     }
     // Redirect authenticated users away from login page to dashboard
@@ -68,29 +109,33 @@ export function useNavigation() {
     }
   };
 
-  const shouldShowPage = (currentPath: string) => {
+  const shouldShowPage = (currentPath: string, options?: RedirectOptions): boolean => {
     // Public routes are always accessible
     const publicRoutes = ['/login', '/', '/signup', '/verify-email', '/reset-password', '/update-password', '/auth-loading'];
     if (publicRoutes.includes(currentPath)) {
       return true;
     }
-    
-    // During loading, be permissive
-    if (isAuthLoading && !optimisticAuthData) {
+
+    const authState = getAuthState();
+    const hasPendingPayment = options?.searchParams?.has('payment_success') ?? false;
+
+    if (authState === 'loading') {
       return true;
     }
-    
-    const authState = getAuthState();
-    
+
     // Simple access control
     if (authState === 'unauthenticated') {
       return publicRoutes.includes(currentPath);
     }
     
     if (authState === 'needs_onboarding') {
-      return currentPath === '/onboarding';
+      if (currentPath === '/onboarding') {
+        return true;
+      }
+
+      return hasPendingPayment && currentPath === '/dashboard';
     }
-    
+
     // If authenticated with subscription, allow access to any protected page
     return true;
   };
@@ -99,8 +144,8 @@ export function useNavigation() {
     redirectIfNeeded,
     getDestination: getRedirectDestination,
     shouldShowPage,
-    isLoading: isAuthLoading && !optimisticAuthData,
+    isLoading: getAuthState() === 'loading',
     hasOptimisticData: !!optimisticAuthData,
-    authData: optimisticAuthData || authData
+    authData: (optimisticAuthData || authData) ?? null
   };
 }

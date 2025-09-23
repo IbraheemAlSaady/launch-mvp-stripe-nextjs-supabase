@@ -345,12 +345,14 @@ async function createSubscription(subscriptionId: string, userId: string, custom
 
     // Update user preferences to mark onboarding as completed
     try {
+      const now = new Date().toISOString();
       const { error: preferencesError } = await supabaseAdmin
         .from('user_preferences')
         .upsert({
           user_id: userId,
           has_completed_onboarding: true,
-          updated_at: new Date().toISOString()
+          onboarding_completed_at: now,
+          updated_at: now
         });
 
       if (preferencesError) {

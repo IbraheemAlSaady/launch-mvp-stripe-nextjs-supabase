@@ -1,16 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/LoginForm';
 import { LoginSkeleton } from '@/components/ui/skeleton';
+import { AuthLoadingContent } from '@/components/AuthLoadingContent';
 
 export default function LoginPage() {
   const { user, isLoading: authLoading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const router = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useLayoutEffect(() => {
+    if (user && !authLoading) {
+      router.prefetch('/dashboard');
+      router.prefetch('/onboarding');
+    }
+  }, [user, authLoading, router]);
 
 
   const handleSubmit = async (email: string, password: string, isSignUp: boolean) => {
@@ -42,12 +50,12 @@ export default function LoginPage() {
 
   // If user is authenticated, don't show anything (prevents flash)
   // Only hide if we're certain about the redirect
-  if (user && !authLoading) {
-    return null;
+  if (user || authLoading) {
+    return <AuthLoadingContent />;
   }
   
   // Show skeleton when form is submitting or auth is loading
-  if (isLoading || authLoading) {
+  if (isLoading) {
     return <LoginSkeleton />;
   }
 
