@@ -9,12 +9,8 @@ frontend:
     preBuild:
       commands:
         - npm ci
-        - echo "Environment check - NEXT_PUBLIC_APP_URL:$NEXT_PUBLIC_APP_URL"
     build:
       commands:
-        - echo "Building Next.js application..."
-        - echo "Checking environment variables:"
-        - echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL"
         - npm run build
   artifacts:
     baseDirectory: .next
