@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -21,7 +21,7 @@ const PUBLIC_ROUTES = [
   '/auth-loading'  // Loading page for auth flow
 ];
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRouteContent({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { shouldShowPage, redirectIfNeeded, isLoading, hasOptimisticData } = useNavigation();
   const pathname = usePathname();
@@ -72,4 +72,14 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   // If we shouldn't show the page, return null (redirect will happen)
   return null;
-} 
+}
+
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<PageSkeleton showHeader={false} />}>
+      <ProtectedRouteContent>
+        {children}
+      </ProtectedRouteContent>
+    </Suspense>
+  );
+}

@@ -1,7 +1,7 @@
 "use client";
 
 // import { useWebSocket } from '@/contexts/WebSocketContext';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
@@ -81,7 +81,7 @@ const recentActivity = [
   }
 ];
 
-export default function Dashboard() {
+function DashboardContent() {
   const { user, session, isSubscriber } = useAuth();
   const { redirectIfNeeded, shouldShowPage, isLoading, authData } = useNavigation();
   const searchParams = useSearchParams();
@@ -357,5 +357,13 @@ export default function Dashboard() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
