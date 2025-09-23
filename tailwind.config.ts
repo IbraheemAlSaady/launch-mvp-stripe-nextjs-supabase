@@ -11,33 +11,32 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#A78BFA', // Violet-400: Soft lavender
-          light: '#C4B5FD',   // Violet-300: Light lavender
-          dark: '#8B5CF6',    // Violet-500: Medium lavender
+          DEFAULT: '#FF6B6B', // Vibrant coral/pink
+          light: '#FF8E8E',   // Light coral
+          dark: '#E55555',    // Dark coral
         },
-        danger: {
-          DEFAULT: '#DC2626', // Red-600: Clear red
-          light: '#F87171',   // Red-400: Soft red
-          dark: '#B91C1C',    // Red-700: Deep red
-        },
-        neutral: {
-          DEFAULT: '#F8FAFC', // Slate-50: Crisp light
-          dark: '#1E293B',    // Slate-800: Rich dark
-          darker: '#0F172A',  // Slate-900: Deep dark
-        },
-        text: {
-          DEFAULT: '#0F172A', // Slate-900: Sharp text
-          light: '#64748B',   // Slate-500: Soft text
-          dark: '#F8FAFC',    // Slate-50: Light text
-        },
-        surface: {
-          light: '#FFFFFF',   // Pure white
-          dark: '#1E293B',    // Slate-800: Rich surface
+        secondary: {
+          DEFAULT: '#4ECDC4', // Vibrant teal
+          light: '#7ED9D1',   // Light teal
+          dark: '#3DB8B0',    // Dark teal
         },
         accent: {
-          DEFAULT: '#38BDF8', // Sky-400: Fresh blue
-          light: '#7DD3FC',   // Sky-300: Soft blue
-          dark: '#0EA5E9',    // Sky-500: Deep blue
+          orange: '#FF9F43',  // Vibrant orange
+          yellow: '#FEE501',  // Bright yellow
+          green: '#26D0CE',   // Bright green/cyan
+          blue: '#4A90E2',    // Vibrant blue
+          purple: '#9B59B6',  // Purple
+        },
+        neutral: {
+          DEFAULT: '#F7F7F7', // Light cream/beige background
+          dark: '#2C2C2C',    // Dark text
+          darker: '#1A1A1A',  // Darker text
+          light: '#FFFFFF',   // Pure white
+        },
+        text: {
+          DEFAULT: '#2C2C2C', // Dark text
+          light: '#666666',   // Light text
+          dark: '#1A1A1A',    // Darker text
         }
       },
       boxShadow: {

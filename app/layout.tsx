@@ -44,9 +44,11 @@ export default function RootLayout({
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Don't show TopBar on dashboard-related routes as they have their own layout
+  // Don't show TopBar on dashboard-related routes and landing page as they have their own layout
   const dashboardRoutes = ['/dashboard', '/charts', '/billing', '/posts', '/settings'];
-  const showTopBar = !dashboardRoutes.some(route => pathname?.startsWith(route));
+  const landingRoutes = ['/'];
+  const showTopBar = !dashboardRoutes.some(route => pathname?.startsWith(route)) && 
+                    !landingRoutes.includes(pathname || '');
   
   return (
     <>
